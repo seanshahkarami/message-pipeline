@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+from pipeline import Plugin
+import time
+
+plugin = Plugin({
+    'plugin_id': 1,
+    'plugin_major_version': 1,
+    'plugin_minor_version': 2,
+})
+
+while True:
+    print('processing waiting messages...')
+    for msg in plugin.get_waiting_messages('inqueue'):
+        print(msg)
+
+    print('doing some sensor work...')
+    time.sleep(1)
+
+    print('sending results...')
+    plugin.publish(b'finally! i can send all the data i want!')
+    time.sleep(2)
+
+print('done')
