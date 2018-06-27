@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pika
+import secrets
 from waggle.protocol.v0 import *
 
 # WAGGLE_PLUGIN_CACERTFILE
@@ -9,8 +10,10 @@ from waggle.protocol.v0 import *
 class Plugin:
 
     def __init__(self, config):
+        self.run_id = secrets.randbelow(0xffffffff)
+
         self.config = config
-        self.queue = 'inqueue'
+        self.queue = 'in-plugin-{}-{}-{}'.format(config['plugin_id'], config['plugin_major_version'], 0)
 
         credentials = pika.credentials.PlainCredentials(
             username=config.get('username', 'admin'),
