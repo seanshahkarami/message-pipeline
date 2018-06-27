@@ -26,7 +26,7 @@ def process_message(ch, method, properties, body):
         mailbox = get_mailbox_for_receiver_id(receiver_id)
 
         print('routing', message, 'to', mailbox)
-        ch.basic_publish(exchange='', routing_key=mailbox, body=pack_waggle_packets([message]))
+        ch.basic_publish('', mailbox, pack_waggle_packets([message]))
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
