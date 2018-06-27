@@ -3,17 +3,24 @@ import pika
 from waggle.protocol.v0 import *
 
 
+def get_mailbox_for_datagram(datagram):
+    return 'in-{}-{}-{}'.format(
+        datagram['plugin_id'],
+        datagram['plugin_major_version'],
+        datagram['plugin_instance'])
+
+
 def forward_datagrams_to_plugin(message):
     try:
         datagrams = unpack_datagrams(message['body'])
     except ValueError:
-        print('not datagrams')
+        print('invalid datagrams - dropping')
         return
 
     for datagram in datagrams:
         print('---')
-        print(datagram['plugin_id'], datagram['plugin_instance'])
-        print(datagram['body'])
+        mailbox = get_mailbox_for_datagram(datagram)
+        print(datagram['body'], '->', mailbox)
 
 
 dispatch_table = {

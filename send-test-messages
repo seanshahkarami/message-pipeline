@@ -42,7 +42,8 @@ data = pack_waggle_packets([
                 'body': b'hello 2',
             },
             {
-                'plugin_id': 3,
+                'plugin_id': 1,
+                'plugin_instance': 1,
                 'body': b'hello 3',
             },
         ]),
