@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 from waggle.protocol.v0 import *
-
-mailbox = {
-    b'0123456789abcdef': 'to-0123456789abcdef',
-    b'fedcba9876543210': 'to-fedcba9876543210',
-}
+import pika
 
 routing_table = {
     (b'0123456789abcdef', b'fedcba9876543210'),
@@ -12,21 +8,53 @@ routing_table = {
     (b'fedcba9876543210', b'fedcba9876543210'),
 }
 
+# prepopulate default mailboxes
+mailbox = {receiver_id: 'to-{}'.format(receiver_id.decode())
+           for _, receiver_id in routing_table}
+
 
 def isroutable(message):
     return (message['receiver_id'] in mailbox and
             (message['sender_id'], message['receiver_id']) in routing_table)
 
 
-if __name__ == '__main__':
-    data = pack_waggle_packets([{
-        'sender_id': b'0123456789abcdef',
-        'receiver_id': b'fedcba9876543210',
-        'body': b'^this is a really, really important message!$',
-    }] * 3)
+def route_message_or_drop(message):
+    if isroutable(message):
+        print('routing', message, 'to', mailbox[message['receiver_id']])
+    else:
+        print('dropping', message)
 
-    for message in unpack_waggle_packets(data):
-        if isroutable(message):
-            print('routing', message)
-        else:
-            print('dropping', message)
+
+# add correct environement variables
+# can specify complete connection as amqps url
+
+if __name__ == '__main__':
+    parameters = pika.URLParameters('amqp://admin:testing@localhost')
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
+
+    channel.exchange_declare(exchange='messages', exchange_type='fanout', durable=True)
+    channel.queue_declare(queue='messages', durable=True)
+    channel.queue_bind(queue='messages', exchange='messages')
+
+    for queue in mailbox.values():
+        channel.queue_declare(queue=queue, durable=True)
+
+    for method, properties, body in channel.consume('messages'):
+
+        for message in unpack_waggle_packets(body):
+            print(message)
+
+        channel.basic_ack(delivery_tag=method.delivery_tag)
+
+    # route_message_or_drop({
+    #     'sender_id': b'0123456789abcdef',
+    #     'receiver_id': b'fedcba9876543210',
+    #     'body': b'^this is a really, really important message!$',
+    # })
+    #
+    # route_message_or_drop({
+    #     'sender_id': b'0123456789abcde9',
+    #     'receiver_id': b'fedcba9876543210',
+    #     'body': b'^this is a really, really important message!$',
+    # })

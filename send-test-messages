@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+from waggle.protocol.v0 import *
+import pika
+
+routing_table = {
+    (b'0123456789abcdef', b'fedcba9876543210'),
+    (b'0123456789abcdef', b'0123456789abcdef'),
+    (b'fedcba9876543210', b'fedcba9876543210'),
+}
+
+
+parameters = pika.URLParameters('amqp://admin:testing@localhost')
+connection = pika.BlockingConnection(parameters)
+channel = connection.channel()
+
+data = pack_waggle_packets([
+    {
+        'sender_id': b'0123456789abcdef',
+        'receiver_id': b'fedcba9876543210',
+        'body': b'first!',
+    },
+    {
+        'sender_id': b'0123456789abcdef',
+        'receiver_id': b'fedcba9876543210',
+        'body': b'second!',
+    },
+    {
+        'sender_id': b'0123456789abcdef',
+        'receiver_id': b'fedcba9876543210',
+        'body': b'third!',
+    },
+])
+
+channel.basic_publish('', 'messages', data)

@@ -10,7 +10,7 @@ plugin = Plugin({
 
 while True:
     print('processing waiting messages...')
-    for msg in plugin.get_waiting_messages('inqueue'):
+    for msg in plugin.get_waiting_messages():
         print(msg)
 
     print('doing some sensor work...')

@@ -10,6 +10,7 @@ class Plugin:
 
     def __init__(self, config):
         self.config = config
+        self.queue = 'inqueue'
 
         credentials = pika.credentials.PlainCredentials(
             username=config.get('username', 'admin'),
@@ -27,11 +28,11 @@ class Plugin:
             'body': body,
         }])
 
-        print(datagram)
+        self.channel.basic_publish('data', '', datagram)
 
-    def get_waiting_messages(self, queue):
+    def get_waiting_messages(self):
         while True:
-            method, properties, body = self.channel.basic_get(queue=queue)
+            method, properties, body = self.channel.basic_get(queue=self.queue)
 
             if method is None:
                 return
