@@ -4,13 +4,13 @@ from waggle.protocol.v0 import *
 
 
 def get_mailbox_for_datagram(datagram):
-    return 'in-{}-{}-{}'.format(
+    return 'in-plugin-{}-{}-{}'.format(
         datagram['plugin_id'],
         datagram['plugin_major_version'],
         datagram['plugin_instance'])
 
 
-def forward_datagrams_to_plugin(message):
+def forward_datagrams_to_plugin(ch, message):
     try:
         datagrams = unpack_datagrams(message['body'])
     except ValueError:
@@ -21,7 +21,15 @@ def forward_datagrams_to_plugin(message):
         print('---')
         mailbox = get_mailbox_for_datagram(datagram)
         print(datagram['body'], '->', mailbox)
+        ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
+
+plugin_instances = [
+    (1, 0, 0),
+    (1, 0, 1),
+    (1, 0, 2),
+    (2, 0, 0),
+]
 
 dispatch_table = {
     (0, 0): forward_datagrams_to_plugin,
@@ -36,7 +44,7 @@ def process_message(ch, method, properties, body):
             print('dropping', message)
 
         print('dispatch', message)
-        dispatch_table[message_type](message)
+        dispatch_table[message_type](ch, message)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -45,6 +53,10 @@ if __name__ == '__main__':
     parameters = pika.URLParameters('amqp://admin:testing@localhost')
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
+
+    for p in plugin_instances:
+        mailbox = 'in-plugin-{}-{}-{}'.format(*p)
+        channel.queue_declare(mailbox, durable=True)
 
     channel.basic_consume(process_message, 'to-fedcba9876543210')
     channel.start_consuming()
