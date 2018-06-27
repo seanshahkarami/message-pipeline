@@ -1,33 +1,43 @@
 #!/usr/bin/env python3
+import pika
 from waggle.protocol.v0 import *
 
 
-def forward_to_plugin(message):
-    print('forwarding message to plugin', message)
+def forward_datagrams_to_plugin(message):
+    try:
+        datagrams = unpack_datagrams(message['body'])
+    except ValueError:
+        print('not datagrams')
+        return
 
-    for datagram in unpack_datagrams(message['body']):
+    for datagram in datagrams:
         print('---')
         print(datagram['plugin_id'], datagram['plugin_instance'])
+        print(datagram['body'])
 
 
 dispatch_table = {
-    (0, 0): forward_to_plugin, # data message type
+    (0, 0): forward_datagrams_to_plugin,
 }
 
-body = pack_datagrams([
-    {'plugin_id': 1, 'body': b'hahaha'},
-    {'plugin_id': 2, 'body': b'hahaha'},
-    {'plugin_id': 3, 'body': b'hahaha'},
-])
 
-data = pack_waggle_packets([{
-    'sender_id': b'0123456789abcdef',
-    'receiver_id': b'fedcba9876543210',
-    'body': body,
-}])
+def process_message(ch, method, properties, body):
+    for message in unpack_waggle_packets(body):
+        message_type = (message['message_major_type'], message['message_minor_type'])
 
-for message in unpack_waggle_packets(data):
-    message_type = (message['message_major_type'], message['message_minor_type'])
+        if message_type not in dispatch_table:
+            print('dropping', message)
 
-    if message_type in dispatch_table:
+        print('dispatch', message)
         dispatch_table[message_type](message)
+
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
+if __name__ == '__main__':
+    parameters = pika.URLParameters('amqp://admin:testing@localhost')
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
+
+    channel.basic_consume(process_message, 'to-fedcba9876543210')
+    channel.start_consuming()

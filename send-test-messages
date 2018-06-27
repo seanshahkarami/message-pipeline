@@ -29,6 +29,24 @@ data = pack_waggle_packets([
         'receiver_id': b'fedcba9876543210',
         'body': b'third!',
     },
+    {
+        'sender_id': b'0123456789abcdef',
+        'receiver_id': b'fedcba9876543210',
+        'body': pack_datagrams([
+            {
+                'plugin_id': 1,
+                'body': b'hello 1',
+            },
+            {
+                'plugin_id': 2,
+                'body': b'hello 2',
+            },
+            {
+                'plugin_id': 3,
+                'body': b'hello 3',
+            },
+        ]),
+    },
 ])
 
 channel.basic_publish('', 'messages', data)
