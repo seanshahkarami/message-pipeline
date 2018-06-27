@@ -26,26 +26,21 @@ def process_message(ch, method, properties, body):
         mailbox = get_mailbox_for_receiver_id(receiver_id)
 
         print('routing', message, 'to', mailbox)
-        ch.basic_publish(exchange=mailbox, routing_key='', body=pack_waggle_packets([message]))
+        ch.basic_publish(exchange='', routing_key=mailbox, body=pack_waggle_packets([message]))
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
+
 
 if __name__ == '__main__':
     parameters = pika.URLParameters('amqp://admin:testing@localhost')
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
-    channel.exchange_declare(exchange='messages', exchange_type='fanout', durable=True)
     channel.queue_declare(queue='messages', durable=True)
-    channel.queue_bind(queue='messages', exchange='messages')
-
-    channel.exchange_declare(exchange='router', exchange_type='direct', durable=True)
 
     for sender_id, receiver_id in routing_table:
         mailbox = get_mailbox_for_receiver_id(receiver_id)
-        channel.exchange_declare(exchange=mailbox, exchange_type='fanout', durable=True)
         channel.queue_declare(queue=mailbox, durable=True)
-        channel.queue_bind(queue=mailbox, exchange=mailbox)
 
     channel.basic_consume(process_message, 'messages')
     channel.start_consuming()
