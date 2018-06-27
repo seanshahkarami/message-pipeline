@@ -36,9 +36,8 @@ class Plugin:
     def get_waiting_messages(self):
         while True:
             method, properties, body = self.channel.basic_get(queue=self.queue)
-
-            if method is None:
-                return
-
-            yield properties, body
+            if body is None:
+                break
+            for datagram in unpack_datagrams(body):
+                yield datagram
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
