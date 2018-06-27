@@ -36,8 +36,17 @@ class Plugin:
     def get_waiting_messages(self):
         while True:
             method, properties, body = self.channel.basic_get(queue=self.queue)
+
             if body is None:
                 break
-            for datagram in unpack_datagrams(body):
+
+            try:
+                datagrams = unpack_datagrams(body)
+            except ValueError:
+                print('invalid datagrams received')
+                continue
+
+            for datagram in datagrams:
                 yield datagram
+
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
