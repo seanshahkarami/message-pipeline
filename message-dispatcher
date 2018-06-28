@@ -42,18 +42,25 @@ plugin_instances = [
     (2, 0, 0),
 ]
 
+# perhaps plugins should be the ones to define this. error can be logged if
+# we try to send to a nonexistant exchange / queue.
+
 dispatch_table = {
     (0, 0): forward_datagrams_to_plugin,
 }
 
+def route_message(ch, message):
+    message_type = (message['message_major_type'], message['message_minor_type'])
+
+    if message_type not in dispatch_table:
+        logger.info('Dropping message %s', message)
+        return
+
+    dispatch_table[message_type](ch, message)
+
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
-        message_type = (message['message_major_type'], message['message_minor_type'])
-
-        if message_type not in dispatch_table:
-            logger.info('Dropping message %s', message)
-
-        dispatch_table[message_type](ch, message)
+        route_message(message)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 

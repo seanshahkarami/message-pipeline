@@ -32,15 +32,19 @@ def get_mailbox_for_receiver_id(receiver_id):
     return 'to-{}'.format(receiver_id.decode())
 
 
+def route_message(ch, message):
+    if not isroutable(message):
+        logger.info('Dropping message from %s to %s.', message['sender_id'], message['receiver_id'])
+        return
+
+    logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
+    mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
+    ch.basic_publish('', mailbox, pack_waggle_packets([message]))
+
+
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
-        if not isroutable(message):
-            logger.info('Dropping message from %s to %s.', message['sender_id'], message['receiver_id'])
-            continue
-
-        logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
-        mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
-        ch.basic_publish('', mailbox, pack_waggle_packets([message]))
+        route_message(ch, message)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
