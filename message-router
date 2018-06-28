@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import csv
 import logging
 import pika
 import time
@@ -15,16 +16,23 @@ logger = logging.getLogger('message-router')
 logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
-DATA = (0, 0)
+
+message_types = {
+    (0, 0): 'data',
+}
 
 
 def get_message_type(message):
-    return (message['message_major_type'],
-            message['message_minor_type'])
+    return message_types[(message['message_major_type'],
+                          message['message_minor_type'])]
 
 
 def get_mailbox_for_receiver_id(receiver_id):
     return 'to-{}'.format(receiver_id.decode())
+
+
+def route_to_receiver_auth(ch, message):
+    raise NotImplementedError('Token authentication is not implemented yet.')
 
 
 def route_to_receiver(ch, message):
@@ -53,12 +61,7 @@ def route_to_plugin(ch, message):
         ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
 
-routing_table = {
-    (b'0123456789abcdef', b'fedcba9876543210', DATA): route_to_receiver,
-    (b'0123456789abcdef', b'0123456789abcdef', DATA): route_to_receiver,
-    (b'fedcba9876543210', b'fedcba9876543210', DATA): route_to_receiver,
-    (b'0000000000000000', b'0000000000000001', DATA): route_to_plugin,
-}
+routing_table = {}
 
 
 def route_message(ch, message):
@@ -129,7 +132,31 @@ def start_routing():
     start_message_processor(channel)
 
 
+routes_actions = {
+    'route_to_receiver': route_to_receiver,
+    'route_to_plugin': route_to_plugin,
+}
+
+
+def load_routes_file(filename):
+    table = {}
+
+    with open(filename) as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            sender_id = row['sender'].encode()
+            receiver_id = row['receiver'].encode()
+            message_type = row['type']
+            action = routes_actions[row['action']]
+            table[(sender_id, receiver_id, message_type)] = action
+
+    return table
+
+
 if __name__ == '__main__':
+    routing_table = load_routes_file('routes-combined.csv')
+
     while True:
         try:
             start_routing()
