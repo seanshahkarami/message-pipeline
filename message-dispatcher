@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import logging
 import pika
 from waggle.protocol.v0 import *
 
@@ -13,17 +14,6 @@ logger = logging.getLogger('message-dispatcher')
 logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
-plugin_instances = [
-    (1, 0, 0),
-    (1, 0, 1),
-    (1, 0, 2),
-    (2, 0, 0),
-]
-
-dispatch_table = {
-    (0, 0): forward_datagrams_to_plugin,
-}
-
 
 def get_mailbox_for_datagram(datagram):
     return 'in-plugin-{}-{}-{}'.format(
@@ -36,24 +26,33 @@ def forward_datagrams_to_plugin(ch, message):
     try:
         datagrams = unpack_datagrams(message['body'])
     except ValueError:
-        print('invalid datagrams - dropping')
+        logger.info('Dropping invalid datagrams.')
         return
 
     for datagram in datagrams:
-        print('---')
         mailbox = get_mailbox_for_datagram(datagram)
-        print(datagram['body'], '->', mailbox)
+        logger.info('Routing datagram to %s.', mailbox)
         ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
+
+plugin_instances = [
+    (1, 0, 0),
+    (1, 0, 1),
+    (1, 0, 2),
+    (2, 0, 0),
+]
+
+dispatch_table = {
+    (0, 0): forward_datagrams_to_plugin,
+}
 
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
         message_type = (message['message_major_type'], message['message_minor_type'])
 
         if message_type not in dispatch_table:
-            print('dropping', message)
+            logger.info('Dropping message %s', message)
 
-        print('dispatch', message)
         dispatch_table[message_type](ch, message)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -83,16 +82,22 @@ def declare_queues(channel):
         channel.queue_declare(mailbox, durable=True)
 
 
-def start_dispatching():
-    connection = get_rabbitmq_connection()
-
-    logger.info('Connected to message broker.')
-
-    channel = connection.channel()
-    declare_queues(channel)
+def start_message_processor(channel):
+    logger.info('Starting message processor.')
 
     channel.basic_consume(process_message, 'to-fedcba9876543210')
-    channel.start_consuming()
+
+    try:
+        channel.start_consuming()
+    finally:
+        logger.info('Stopped message processor.')
+
+
+def start_dispatching():
+    connection = get_rabbitmq_connection()
+    channel = connection.channel()
+    declare_queues(channel)
+    start_message_processor(channel)
 
 
 if __name__ == '__main__':

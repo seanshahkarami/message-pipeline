@@ -15,15 +15,17 @@ logger = logging.getLogger('message-router')
 logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
+
 routing_table = {
-    (b'0123456789abcdef', b'fedcba9876543210'),
-    (b'0123456789abcdef', b'0123456789abcdef'),
-    (b'fedcba9876543210', b'fedcba9876543210'),
+    (b'0123456789abcdef', b'fedcba9876543210', (0, 0)),
+    (b'0123456789abcdef', b'0123456789abcdef', (0, 0)),
+    (b'fedcba9876543210', b'fedcba9876543210', (0, 0)),
 }
 
 
 def isroutable(message):
-    return (message['sender_id'], message['receiver_id']) in routing_table
+    message_type = (message['message_major_type'], message['message_minor_type'])
+    return (message['sender_id'], message['receiver_id'], message_type) in routing_table
 
 
 def get_mailbox_for_receiver_id(receiver_id):
@@ -33,10 +35,10 @@ def get_mailbox_for_receiver_id(receiver_id):
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
         if not isroutable(message):
-            logger.info('drop %s to %s', message['sender_id'], message['receiver_id'])
+            logger.info('Dropping message from %s to %s.', message['sender_id'], message['receiver_id'])
             continue
 
-        logger.info('route %s to %s', message['sender_id'], message['receiver_id'])
+        logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
         mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
         ch.basic_publish('', mailbox, pack_waggle_packets([message]))
 
@@ -62,24 +64,22 @@ def get_rabbitmq_connection():
 
 
 def declare_incoming_message_queue(channel):
-    logger.info('Declaring incoming message queue.')
     channel.queue_declare(queue='messages', durable=True)
 
 
 def declare_mailbox_queues(channel):
-    logger.info('Declaring mailbox queues.')
-
-    for sender_id, receiver_id in routing_table:
+    for _, receiver_id, _ in routing_table:
         mailbox = get_mailbox_for_receiver_id(receiver_id)
         channel.queue_declare(queue=mailbox, durable=True)
 
 
 def declare_queues(channel):
+    logger.info('Declaring message queues.')
     declare_incoming_message_queue(channel)
     declare_mailbox_queues(channel)
 
 
-def start_consuming_messages(channel):
+def start_message_processor(channel):
     logger.info('Starting message processor.')
     channel.basic_consume(process_message, 'messages')
 
@@ -93,7 +93,7 @@ def start_routing():
     connection = get_rabbitmq_connection()
     channel = connection.channel()
     declare_queues(channel)
-    start_consuming_messages(channel)
+    start_message_processor(channel)
 
 
 if __name__ == '__main__':
