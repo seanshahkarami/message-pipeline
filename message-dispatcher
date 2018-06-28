@@ -59,25 +59,37 @@ def process_message(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-def start_dispatching():
-    logger.info('Connecting to message broker.')
+def get_rabbitmq_connection():
+    logger.info('Connecting to RabbitMQ server.')
+
+    credentials = pika.PlainCredentials(
+        username='admin',
+        password='testing')
 
     parameters = pika.ConnectionParameters(
         host='localhost',
-        credentials=pika.PlainCredentials(
-            username='admin',
-            password='testing',
-        ))
+        credentials=credentials)
 
     connection = pika.BlockingConnection(parameters)
+
+    logger.info('Connected to RabbitMQ server.')
+
+    return connection
+
+
+def declare_queues(channel):
+    for p in plugin_instances:
+        mailbox = 'in-plugin-{}-{}-{}'.format(*p)
+        channel.queue_declare(mailbox, durable=True)
+
+
+def start_dispatching():
+    connection = get_rabbitmq_connection()
 
     logger.info('Connected to message broker.')
 
     channel = connection.channel()
-
-    for p in plugin_instances:
-        mailbox = 'in-plugin-{}-{}-{}'.format(*p)
-        channel.queue_declare(mailbox, durable=True)
+    declare_queues(channel)
 
     channel.basic_consume(process_message, 'to-fedcba9876543210')
     channel.start_consuming()

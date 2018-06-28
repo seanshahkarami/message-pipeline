@@ -61,32 +61,42 @@ def get_rabbitmq_connection():
     return connection
 
 
-def declare_queues(channel):
+def declare_incoming_message_queue(channel):
+    logger.info('Declaring incoming message queue.')
     channel.queue_declare(queue='messages', durable=True)
+
+
+def declare_mailbox_queues(channel):
+    logger.info('Declaring mailbox queues.')
 
     for sender_id, receiver_id in routing_table:
         mailbox = get_mailbox_for_receiver_id(receiver_id)
         channel.queue_declare(queue=mailbox, durable=True)
 
 
-def start_routing():
-    connection = get_rabbitmq_connection()
-    channel = connection.channel()
+def declare_queues(channel):
+    declare_incoming_message_queue(channel)
+    declare_mailbox_queues(channel)
 
-    declare_queues(channel)
 
+def start_consuming_messages(channel):
+    logger.info('Starting message processor.')
     channel.basic_consume(process_message, 'messages')
 
     try:
-        logger.info('Started message processing.')
         channel.start_consuming()
     finally:
-        logger.info('Stopped message processing.')
+        logger.info('Stopped message processor.')
+
+
+def start_routing():
+    connection = get_rabbitmq_connection()
+    channel = connection.channel()
+    declare_queues(channel)
+    start_consuming_messages(channel)
 
 
 if __name__ == '__main__':
-    logger.info('Started message router.')
-
     while True:
         try:
             start_routing()
@@ -95,5 +105,3 @@ if __name__ == '__main__':
         except Exception:
             logger.exception('Unhandled exception occurred. Will retry...')
             time.sleep(5)
-
-    logger.info('Stopped message router.')
