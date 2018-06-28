@@ -37,9 +37,8 @@ def process_message(ch, method, properties, body):
             logger.info('drop %s to %s', message['sender_id'], message['receiver_id'])
             continue
 
-        mailbox = get_mailbox_for_receiver_id(receiver_id)
-
         logger.info('route %s to %s', message['sender_id'], message['receiver_id'])
+        mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
         ch.basic_publish('', mailbox, pack_waggle_packets([message]))
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -84,8 +83,8 @@ if __name__ == '__main__':
             start_routing()
         except KeyboardInterrupt:
             break
-        except pika.exceptions.ConnectionClosed:
-            logger.warning('Connection closed. Retrying.')
+        except Exception:
+            logger.exception('Unhandled exception occurred. Will retry...')
             time.sleep(5)
 
     logger.info('Stopped message router.')
