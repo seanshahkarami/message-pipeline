@@ -3,6 +3,28 @@ import pika
 from waggle.protocol.v0 import *
 
 
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+ch.setFormatter(formatter)
+
+logger = logging.getLogger('message-dispatcher')
+logger.setLevel(logging.INFO)
+logger.addHandler(ch)
+
+plugin_instances = [
+    (1, 0, 0),
+    (1, 0, 1),
+    (1, 0, 2),
+    (2, 0, 0),
+]
+
+dispatch_table = {
+    (0, 0): forward_datagrams_to_plugin,
+}
+
+
 def get_mailbox_for_datagram(datagram):
     return 'in-plugin-{}-{}-{}'.format(
         datagram['plugin_id'],
@@ -24,18 +46,6 @@ def forward_datagrams_to_plugin(ch, message):
         ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
 
-plugin_instances = [
-    (1, 0, 0),
-    (1, 0, 1),
-    (1, 0, 2),
-    (2, 0, 0),
-]
-
-dispatch_table = {
-    (0, 0): forward_datagrams_to_plugin,
-}
-
-
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
         message_type = (message['message_major_type'], message['message_minor_type'])
@@ -49,13 +59,20 @@ def process_message(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-# would really love to clean up pki bit of this... want to just use tls auth
-# everywhere. then, workers can really exist anywhere securely.
-# clean up and manage the certificate store.
+def start_dispatching():
+    logger.info('Connecting to message broker.')
 
-if __name__ == '__main__':
-    parameters = pika.URLParameters('amqp://admin:testing@localhost')
+    parameters = pika.ConnectionParameters(
+        host='localhost',
+        credentials=pika.PlainCredentials(
+            username='admin',
+            password='testing',
+        ))
+
     connection = pika.BlockingConnection(parameters)
+
+    logger.info('Connected to message broker.')
+
     channel = connection.channel()
 
     for p in plugin_instances:
@@ -64,3 +81,18 @@ if __name__ == '__main__':
 
     channel.basic_consume(process_message, 'to-fedcba9876543210')
     channel.start_consuming()
+
+
+if __name__ == '__main__':
+    logger.info('Started message dispatcher.')
+
+    while True:
+        try:
+            start_dispatching()
+        except KeyboardInterrupt:
+            break
+        except Exception:
+            logger.exception('Unhandled exception occurred. Will retry...')
+            time.sleep(5)
+
+    logger.info('Stopped message dispatcher.')

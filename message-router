@@ -4,16 +4,15 @@ import pika
 import time
 from waggle.protocol.v0 import *
 
-logger = logging.getLogger('message-router')
-logger.setLevel(logging.INFO)
-
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 
+logger = logging.getLogger('message-router')
+logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 routing_table = {
@@ -44,27 +43,37 @@ def process_message(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-def start_routing():
-    logger.info('Connecting to message broker.')
+def get_rabbitmq_connection():
+    logger.info('Connecting to RabbitMQ server.')
+
+    credentials = pika.PlainCredentials(
+        username='admin',
+        password='testing')
 
     parameters = pika.ConnectionParameters(
         host='localhost',
-        credentials=pika.PlainCredentials(
-            username='admin',
-            password='testing',
-        ))
+        credentials=credentials)
 
     connection = pika.BlockingConnection(parameters)
 
-    logger.info('Connected to message broker.')
+    logger.info('Connected to RabbitMQ server.')
 
-    channel = connection.channel()
+    return connection
 
+
+def declare_queues(channel):
     channel.queue_declare(queue='messages', durable=True)
 
     for sender_id, receiver_id in routing_table:
         mailbox = get_mailbox_for_receiver_id(receiver_id)
         channel.queue_declare(queue=mailbox, durable=True)
+
+
+def start_routing():
+    connection = get_rabbitmq_connection()
+    channel = connection.channel()
+
+    declare_queues(channel)
 
     channel.basic_consume(process_message, 'messages')
 
