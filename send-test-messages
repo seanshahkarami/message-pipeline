@@ -49,6 +49,25 @@ data = pack_waggle_packets([
             },
         ]),
     },
+    {
+        'sender_id': b'0000000000000000',
+        'receiver_id': b'0000000000000001',
+        'body': pack_datagrams([
+            {
+                'plugin_id': 1,
+                'body': b'hello 1',
+            },
+            {
+                'plugin_id': 2,
+                'body': b'hello 2',
+            },
+            {
+                'plugin_id': 1,
+                'plugin_instance': 1,
+                'body': b'hello 3',
+            },
+        ]),
+    },
 ])
 
 while True:

@@ -15,31 +15,60 @@ logger = logging.getLogger('message-router')
 logger.setLevel(logging.INFO)
 logger.addHandler(ch)
 
-
-routing_table = {
-    (b'0123456789abcdef', b'fedcba9876543210', (0, 0)),
-    (b'0123456789abcdef', b'0123456789abcdef', (0, 0)),
-    (b'fedcba9876543210', b'fedcba9876543210', (0, 0)),
-}
+DATA = (0, 0)
 
 
-def isroutable(message):
-    message_type = (message['message_major_type'], message['message_minor_type'])
-    return (message['sender_id'], message['receiver_id'], message_type) in routing_table
+def get_message_type(message):
+    return (message['message_major_type'],
+            message['message_minor_type'])
 
 
 def get_mailbox_for_receiver_id(receiver_id):
     return 'to-{}'.format(receiver_id.decode())
 
 
-def route_message(ch, message):
-    if not isroutable(message):
-        logger.info('Dropping message from %s to %s.', message['sender_id'], message['receiver_id'])
-        return
-
+def route_to_receiver(ch, message):
     logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
     mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
     ch.basic_publish('', mailbox, pack_waggle_packets([message]))
+
+
+def get_mailbox_for_datagram(datagram):
+    return 'in-plugin-{}-{}-{}'.format(
+        datagram['plugin_id'],
+        datagram['plugin_major_version'],
+        datagram['plugin_instance'])
+
+
+def route_to_plugin(ch, message):
+    try:
+        datagrams = unpack_datagrams(message['body'])
+    except ValueError:
+        logger.info('Dropping invalid datagrams.')
+        return
+
+    for datagram in datagrams:
+        mailbox = get_mailbox_for_datagram(datagram)
+        logger.info('Routing datagram to %s.', mailbox)
+        ch.basic_publish('', mailbox, pack_datagrams([datagram]))
+
+
+routing_table = {
+    (b'0123456789abcdef', b'fedcba9876543210', DATA): route_to_receiver,
+    (b'0123456789abcdef', b'0123456789abcdef', DATA): route_to_receiver,
+    (b'fedcba9876543210', b'fedcba9876543210', DATA): route_to_receiver,
+    (b'0000000000000000', b'0000000000000001', DATA): route_to_plugin,
+}
+
+
+def route_message(ch, message):
+    try:
+        action = routing_table[(message['sender_id'], message['receiver_id'], get_message_type(message))]
+    except KeyError:
+        logger.info('Dropping message %s.', message)
+        return
+
+    action(ch, message)
 
 
 def process_message(ch, method, properties, body):
