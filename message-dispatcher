@@ -49,6 +49,10 @@ def process_message(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
+# would really love to clean up pki bit of this... want to just use tls auth
+# everywhere. then, workers can really exist anywhere securely.
+# clean up and manage the certificate store.
+
 if __name__ == '__main__':
     parameters = pika.URLParameters('amqp://admin:testing@localhost')
     connection = pika.BlockingConnection(parameters)

@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
-from waggle.protocol.v0 import *
+import logging
 import pika
+import time
+from waggle.protocol.v0 import *
+
+logger = logging.getLogger('message-router')
+logger.setLevel(logging.INFO)
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
 
 routing_table = {
     (b'0123456789abcdef', b'fedcba9876543210'),
@@ -20,20 +34,31 @@ def get_mailbox_for_receiver_id(receiver_id):
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
         if not isroutable(message):
-            print('dropping', message)
+            logger.info('drop %s to %s', message['sender_id'], message['receiver_id'])
             continue
 
         mailbox = get_mailbox_for_receiver_id(receiver_id)
 
-        print('routing', message, 'to', mailbox)
+        logger.info('route %s to %s', message['sender_id'], message['receiver_id'])
         ch.basic_publish('', mailbox, pack_waggle_packets([message]))
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-if __name__ == '__main__':
-    parameters = pika.URLParameters('amqp://admin:testing@localhost')
+def start_routing():
+    logger.info('Connecting to message broker.')
+
+    parameters = pika.ConnectionParameters(
+        host='localhost',
+        credentials=pika.PlainCredentials(
+            username='admin',
+            password='testing',
+        ))
+
     connection = pika.BlockingConnection(parameters)
+
+    logger.info('Connected to message broker.')
+
     channel = connection.channel()
 
     channel.queue_declare(queue='messages', durable=True)
@@ -43,4 +68,24 @@ if __name__ == '__main__':
         channel.queue_declare(queue=mailbox, durable=True)
 
     channel.basic_consume(process_message, 'messages')
-    channel.start_consuming()
+
+    try:
+        logger.info('Started message processing.')
+        channel.start_consuming()
+    finally:
+        logger.info('Stopped message processing.')
+
+
+if __name__ == '__main__':
+    logger.info('Started message router.')
+
+    while True:
+        try:
+            start_routing()
+        except KeyboardInterrupt:
+            break
+        except pika.exceptions.ConnectionClosed:
+            logger.warning('Connection closed. Retrying.')
+            time.sleep(5)
+
+    logger.info('Stopped message router.')
