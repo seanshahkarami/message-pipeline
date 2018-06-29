@@ -80,7 +80,6 @@ def get_mailbox_for_datagram(datagram):
         datagram['plugin_major_version'],
         datagram['plugin_instance'])
 
-# can keep an internal table of name mappings, too.
 
 def deploy_package(ch, message):
     logger.info('Deploying packages on %s: %s', message['receiver_id'], message['body'].decode())
@@ -137,6 +136,7 @@ def load_rules_from_file(filename):
 
 
 def main():
+    # TODO Make this a standard argument.
     global rulefile
 
     parser = argparse.ArgumentParser()
