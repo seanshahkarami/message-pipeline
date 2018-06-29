@@ -1,37 +1,37 @@
 #!/bin/sh
 
-# docker run \
-#   -d \
-#   --name rabbitmq-dev \
-#   -e RABBITMQ_DEFAULT_USER=admin \
-#   -e RABBITMQ_DEFAULT_PASS=admin \
-#   -p 5672:5672 \
-#   -p 15672:15672 \
-#   rabbitmq:3-management
-#
-# docker exec -ti rabbitmq-dev rabbitmqctl add_vhost beehive
-# docker exec -ti rabbitmq-dev rabbitmqctl add_vhost node1
-# docker exec -ti rabbitmq-dev rabbitmqctl add_vhost node2
-# docker exec -ti rabbitmq-dev rabbitmqctl delete_vhost /
-#
-# docker exec -ti rabbitmq-dev rabbitmqctl add_user admin admin
-# docker exec -ti rabbitmq-dev rabbitmqctl set_user_tags admin administrator
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive admin ".*" ".*" ".*"
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node1 admin ".*" ".*" ".*"
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node2 admin ".*" ".*" ".*"
-#
-# docker exec -ti rabbitmq-dev rabbitmqctl add_user beehive beehive
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive beehive ".*" ".*" ".*"
-#
-# docker exec -ti rabbitmq-dev rabbitmqctl add_user node1 node1
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive node1 "node1" "messages" "node1"
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node1 node1 ".*" ".*" ".*"
-#
-# docker exec -ti rabbitmq-dev rabbitmqctl add_user node2 node2
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive node2 "node2" "messages" "node2"
-# docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node2 node2 ".*" ".*" ".*"
-#
-# docker exec -ti rabbitmq-dev rabbitmq-plugins enable rabbitmq_shovel rabbitmq_shovel_management
+docker run \
+  -d \
+  --name rabbitmq-dev \
+  -e RABBITMQ_DEFAULT_USER=admin \
+  -e RABBITMQ_DEFAULT_PASS=admin \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  rabbitmq:3-management
+
+docker exec -ti rabbitmq-dev rabbitmqctl add_vhost beehive
+docker exec -ti rabbitmq-dev rabbitmqctl add_vhost node1
+docker exec -ti rabbitmq-dev rabbitmqctl add_vhost node2
+docker exec -ti rabbitmq-dev rabbitmqctl delete_vhost /
+
+docker exec -ti rabbitmq-dev rabbitmqctl add_user admin admin
+docker exec -ti rabbitmq-dev rabbitmqctl set_user_tags admin administrator
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive admin ".*" ".*" ".*"
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node1 admin ".*" ".*" ".*"
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node2 admin ".*" ".*" ".*"
+
+docker exec -ti rabbitmq-dev rabbitmqctl add_user beehive beehive
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive beehive ".*" ".*" ".*"
+
+docker exec -ti rabbitmq-dev rabbitmqctl add_user node1 node1
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive node1 "node1" "messages" "node1"
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node1 node1 ".*" ".*" ".*"
+
+docker exec -ti rabbitmq-dev rabbitmqctl add_user node2 node2
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p beehive node2 "node2" "messages" "node2"
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node2 node2 ".*" ".*" ".*"
+
+docker exec -ti rabbitmq-dev rabbitmq-plugins enable rabbitmq_shovel rabbitmq_shovel_management
 
 docker exec -ti rabbitmq-dev rabbitmqctl set_parameter -p node1 shovel shovel-node1 \
 '{"src-protocol": "amqp091", "src-uri": "amqp://node1:node1@localhost/beehive", "src-queue": "node1",
