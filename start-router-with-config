@@ -1,0 +1,3 @@
+#!/bin/sh
+
+./message-router rules-$1.json amqp://$1:$1@localhost/$1

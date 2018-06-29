@@ -1,0 +1,5 @@
+[
+  [{"receiver_id": "node2", "message_major_type": 0}, "route_to_plugin"],
+  [{"receiver_id": "node2", "message_major_type": 1}, "deploy_package"],
+  [{"message_major_type": 255}, "print_test"]
+]

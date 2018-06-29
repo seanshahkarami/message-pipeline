@@ -1,0 +1,4 @@
+[
+  [{"sender_id": "admin"}, "route_to_receiver"],
+  [{"message_major_type": 255}, "print_test"]
+]
