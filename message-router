@@ -67,9 +67,6 @@ def get_mailbox_for_receiver_id(receiver_id):
     return 'to-' + receiver_id.decode().strip()
 
 
-queue_declared = {}
-
-
 def route_to_receiver(ch, message):
     logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
     mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
@@ -119,40 +116,19 @@ def process_message(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-def declare_incoming_message_queue(channel):
-    channel.queue_declare(queue='messages', durable=True)
+def start_routing():
+    logger.info('Connecting to RabbitMQ server.')
+    connection = pika.BlockingConnection(connection_parameters)
+    channel = connection.channel()
 
-
-def declare_mailbox_queues(channel):
-    for _, receiver_id, _ in routing_table:
-        mailbox = get_mailbox_for_receiver_id(receiver_id)
-        channel.queue_declare(queue=mailbox, durable=True)
-
-
-def declare_queues(channel):
-    logger.info('Declaring message queues.')
-    declare_incoming_message_queue(channel)
-    # declare_mailbox_queues(channel)
-
-
-def start_message_processor(channel):
     logger.info('Starting message processor.')
+    channel.queue_declare(queue='messages', durable=True)
     channel.basic_consume(process_message, 'messages')
 
     try:
         channel.start_consuming()
     finally:
         logger.info('Stopped message processor.')
-
-
-def start_routing():
-    logger.info('Connecting to RabbitMQ server.')
-    connection = pika.BlockingConnection(connection_parameters)
-    logger.info('Connected to RabbitMQ server.')
-
-    channel = connection.channel()
-    declare_queues(channel)
-    start_message_processor(channel)
 
 
 if __name__ == '__main__':
