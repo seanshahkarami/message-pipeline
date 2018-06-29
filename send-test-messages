@@ -70,5 +70,6 @@ data = pack_waggle_packets([
 ])
 
 while True:
+    channel.queue_declare(queue='messages', durable=True)
     channel.basic_publish('', 'messages', data)
-    time.sleep(3)
+    time.sleep(5)

@@ -33,12 +33,20 @@ docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node2 node2 ".*" ".*
 
 docker exec -ti rabbitmq-dev rabbitmq-plugins enable rabbitmq_shovel rabbitmq_shovel_management
 
-docker exec -ti rabbitmq-dev rabbitmqctl set_parameter -p node1 shovel shovel-node1 \
-'{"src-protocol": "amqp091", "src-uri": "amqp://node1:node1@localhost/beehive", "src-queue": "node1",
-"dest-protocol": "amqp091", "dest-uri": "amqp://node1:node1@localhost/node1",
-"dest-queue": "node1"}'
+docker exec -ti rabbitmq-dev rabbitmqctl set_parameter -p node1 shovel shovel-node1 '{
+"src-protocol": "amqp091",
+"src-uri": "amqp://node1:node1@localhost/beehive",
+"src-queue": "node1",
+"dest-protocol": "amqp091",
+"dest-uri": "amqp://node1:node1@localhost/node1",
+"dest-queue": "node1"
+}'
 
-docker exec -ti rabbitmq-dev rabbitmqctl set_parameter -p node2 shovel shovel-node2 \
-'{"src-protocol": "amqp091", "src-uri": "amqp://node2:node2@localhost/beehive", "src-queue": "node2",
-"dest-protocol": "amqp091", "dest-uri": "amqp://node2:node2@localhost/node2",
-"dest-queue": "node2"}'
+docker exec -ti rabbitmq-dev rabbitmqctl set_parameter -p node2 shovel shovel-node2 '{
+"src-protocol": "amqp091",
+"src-uri": "amqp://node2:node2@localhost/beehive",
+"src-queue": "node2",
+"dest-protocol": "amqp091",
+"dest-uri": "amqp://node2:node2@localhost/node2",
+"dest-queue": "node2"
+}'

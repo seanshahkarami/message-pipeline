@@ -52,7 +52,7 @@ def get_actions_for_message(message):
 
 
 def get_mailbox_for_receiver_id(receiver_id):
-    return 'to-{}'.format(receiver_id.decode())
+    return receiver_id.decode()
 
 
 queue_declared = {}
@@ -112,7 +112,7 @@ def get_rabbitmq_connection():
 
     credentials = pika.PlainCredentials(
         username='admin',
-        password='testing')
+        password='admin')
 
     parameters = pika.ConnectionParameters(
         host='localhost',
@@ -159,14 +159,17 @@ def start_routing():
     start_message_processor(channel)
 
 
+admin = b'admin'.rjust(16, b' ')
+node1 = b'node1'.rjust(16, b' ')
+node2 = b'node2'.rjust(16, b' ')
+
 rule_table = compile_rules([
-    # beehive type rules. can also add a field for token! this would immediately
-    # support authentication as a standard property.
-    ({'sender_id': b'0123456789abcdef', 'receiver_id': b'fedcba9876543210'}, 'route_to_receiver'),
+    ({'sender_id': admin, 'message_major_type': 0}, 'route_to_receiver'),
+    ({'sender_id': admin, 'message_major_type': 1}, 'route_to_receiver'),
 
     # node type rules
-    ({'receiver_id': b'0000000000000001', 'message_major_type': 0}, 'route_to_plugin'),
-    ({'receiver_id': b'0000000000000001', 'message_major_type': 1}, 'deploy_package'),
+    # ({'receiver_id': b'0000000000000001', 'message_major_type': 0}, 'route_to_plugin'),
+    # ({'receiver_id': b'0000000000000001', 'message_major_type': 1}, 'deploy_package'),
 
     # debugging
     ({'message_major_type': 255}, 'log_test_message'),
