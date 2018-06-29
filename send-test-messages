@@ -11,7 +11,7 @@ routing_table = {
 
 credentials = pika.PlainCredentials(
     username='admin',
-    password='testing')
+    password='admin')
 
 parameters = pika.ConnectionParameters(
     host='localhost',
@@ -21,25 +21,24 @@ parameters = pika.ConnectionParameters(
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
+admin = b'admin'.rjust(16, b' ')
+node1 = b'node1'.rjust(16, b' ')
+node2 = b'node2'.rjust(16, b' ')
+
 data = pack_waggle_packets([
     {
-        'sender_id': b'0123456789abcdef',
-        'receiver_id': b'fedcba9876543210',
-        'body': b'first!',
+        'sender_id': admin,
+        'receiver_id': node1,
+        'body': b'hello node1 ~ admin',
     },
     {
-        'sender_id': b'0123456789abcdef',
-        'receiver_id': b'fedcba9876543210',
-        'body': b'second!',
+        'sender_id': admin,
+        'receiver_id': node2,
+        'body': b'hello node2 ~ admin',
     },
     {
-        'sender_id': b'0123456789abcdef',
-        'receiver_id': b'fedcba9876543210',
-        'body': b'third!',
-    },
-    {
-        'sender_id': b'0123456789abcdef',
-        'receiver_id': b'fedcba9876543210',
+        'sender_id': admin,
+        'receiver_id': node1,
         'body': pack_datagrams([
             {
                 'plugin_id': 1,
@@ -57,33 +56,14 @@ data = pack_waggle_packets([
         ]),
     },
     {
-        'sender_id': b'0000000000000000',
-        'receiver_id': b'0000000000000001',
-        'body': pack_datagrams([
-            {
-                'plugin_id': 1,
-                'body': b'hello 1',
-            },
-            {
-                'plugin_id': 2,
-                'body': b'hello 2',
-            },
-            {
-                'plugin_id': 1,
-                'plugin_instance': 1,
-                'body': b'hello 3',
-            },
-        ]),
-    },
-    {
-        'sender_id': b'0000000000000000',
-        'receiver_id': b'0000000000000001',
+        'sender_id': admin,
+        'receiver_id': node2,
         'message_major_type': 1,
         'body': b'rabbitmq-server opencv',
     },
     {
-        'sender_id': b'0000000000000000',
-        'receiver_id': b'0000000000000001',
+        'sender_id': admin,
+        'receiver_id': admin,
         'message_major_type': 255,
         'body': b'',
     }
