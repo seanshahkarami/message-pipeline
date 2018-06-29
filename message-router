@@ -9,31 +9,53 @@ from waggle.protocol.v0 import *
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 
 logger = logging.getLogger('message-router')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
 
-message_types = {
-    (0, 0): 'data',
-}
+def compile_rules(rules):
+    table = {}
+
+    for rule, action in rules:
+        ordered_rule = sorted(rule.items())
+        keys = tuple(k for k, v in ordered_rule)
+        vals = tuple(v for k, v in ordered_rule)
+
+        if keys not in table:
+            table[keys] = {}
+
+        try:
+            table[keys][vals] = globals()[action]
+        except KeyError:
+            logger.warning('No action "%s" defined.', action)
+
+    return table
 
 
-def get_message_type(message):
-    return message_types[(message['message_major_type'],
-                          message['message_minor_type'])]
+def get_actions_for_message(message):
+    for keys, patterns in rule_table.items():
+        try:
+            vals = tuple(message[key] for key in keys)
+        except KeyError:
+            continue
+
+        try:
+            action = patterns[vals]
+        except KeyError:
+            continue
+
+        yield action
 
 
 def get_mailbox_for_receiver_id(receiver_id):
     return 'to-{}'.format(receiver_id.decode())
 
 
-def route_to_receiver_auth(ch, message):
-    raise NotImplementedError('Token authentication is not implemented yet.')
-
+# can abstract just a little and give context object to handler.
 
 def route_to_receiver(ch, message):
     logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
@@ -46,6 +68,15 @@ def get_mailbox_for_datagram(datagram):
         datagram['plugin_id'],
         datagram['plugin_major_version'],
         datagram['plugin_instance'])
+
+# can keep an internal table of name mappings, too.
+
+def deploy_package(ch, message):
+    logger.info('Deploying packages on %s: %s', message['receiver_id'], message['body'].decode())
+
+
+def log_test_message(ch, message):
+    logger.info('Got test message for %s!', message)
 
 
 def route_to_plugin(ch, message):
@@ -61,22 +92,14 @@ def route_to_plugin(ch, message):
         ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
 
-routing_table = {}
-
-
-def route_message(ch, message):
-    try:
-        action = routing_table[(message['sender_id'], message['receiver_id'], get_message_type(message))]
-    except KeyError:
-        logger.info('Dropping message %s.', message)
-        return
-
-    action(ch, message)
+def do_actions_for_message(ch, message):
+    for action in get_actions_for_message(message):
+        action(ch, message)
 
 
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
-        route_message(ch, message)
+        do_actions_for_message(ch, message)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -112,7 +135,7 @@ def declare_mailbox_queues(channel):
 def declare_queues(channel):
     logger.info('Declaring message queues.')
     declare_incoming_message_queue(channel)
-    declare_mailbox_queues(channel)
+    # declare_mailbox_queues(channel)
 
 
 def start_message_processor(channel):
@@ -132,31 +155,21 @@ def start_routing():
     start_message_processor(channel)
 
 
-routes_actions = {
-    'route_to_receiver': route_to_receiver,
-    'route_to_plugin': route_to_plugin,
-}
+rule_table = compile_rules([
+    # beehive type rules. can also add a field for token! this would immediately
+    # support authentication as a standard property.
+    ({'sender_id': b'0123456789abcdef', 'receiver_id': b'fedcba9876543210'}, 'route_to_receiver'),
 
+    # node type rules
+    ({'receiver_id': b'0000000000000001', 'message_major_type': 0}, 'route_to_plugin'),
+    ({'receiver_id': b'0000000000000001', 'message_major_type': 1}, 'deploy_package'),
 
-def load_routes_file(filename):
-    table = {}
-
-    with open(filename) as file:
-        reader = csv.DictReader(file)
-
-        for row in reader:
-            sender_id = row['sender'].encode()
-            receiver_id = row['receiver'].encode()
-            message_type = row['type']
-            action = routes_actions[row['action']]
-            table[(sender_id, receiver_id, message_type)] = action
-
-    return table
+    # debugging
+    ({'message_major_type': 255}, 'log_test_message'),
+])
 
 
 if __name__ == '__main__':
-    routing_table = load_routes_file('routes-combined.csv')
-
     while True:
         try:
             start_routing()

@@ -68,6 +68,18 @@ data = pack_waggle_packets([
             },
         ]),
     },
+    {
+        'sender_id': b'0000000000000000',
+        'receiver_id': b'0000000000000001',
+        'message_major_type': 1,
+        'body': b'rabbitmq-server opencv',
+    },
+    {
+        'sender_id': b'0000000000000000',
+        'receiver_id': b'0000000000000001',
+        'message_major_type': 255,
+        'body': b'',
+    }
 ])
 
 while True:
