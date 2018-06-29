@@ -14,27 +14,28 @@ credentials = pika.PlainCredentials(
     password='admin')
 
 parameters = pika.ConnectionParameters(
-    host='localhost',
     credentials=credentials,
     virtual_host='beehive')
 
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
-admin = b'admin'.rjust(16, b' ')
-node1 = b'node1'.rjust(16, b' ')
-node2 = b'node2'.rjust(16, b' ')
+admin = b'admin'.ljust(16, b' ')
+node1 = b'node1'.ljust(16, b' ')
+node2 = b'node2'.ljust(16, b' ')
 
 data = pack_waggle_packets([
     {
         'sender_id': admin,
         'receiver_id': node1,
         'body': b'hello node1 ~ admin',
+        'message_major_type': 255,
     },
     {
         'sender_id': admin,
         'receiver_id': node2,
         'body': b'hello node2 ~ admin',
+        'message_major_type': 255,
     },
     {
         'sender_id': admin,
@@ -60,12 +61,6 @@ data = pack_waggle_packets([
         'receiver_id': node2,
         'message_major_type': 1,
         'body': b'rabbitmq-server opencv',
-    },
-    {
-        'sender_id': admin,
-        'receiver_id': admin,
-        'message_major_type': 255,
-        'body': b'',
     }
 ])
 

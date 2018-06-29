@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import csv
+import argparse
+import json
 import logging
 import pika
 import time
@@ -21,6 +22,17 @@ def compile_rules(rules):
     table = {}
 
     for rule, action in rules:
+        # ugly hack to normalize names
+        try:
+            rule['sender_id'] = rule['sender_id'].ljust(16, ' ').encode()
+        except KeyError:
+            pass
+
+        try:
+            rule['receiver_id'] = rule['receiver_id'].ljust(16, ' ').encode()
+        except KeyError:
+            pass
+
         ordered_rule = sorted(rule.items())
         keys = tuple(k for k, v in ordered_rule)
         vals = tuple(v for k, v in ordered_rule)
@@ -52,7 +64,7 @@ def get_actions_for_message(message):
 
 
 def get_mailbox_for_receiver_id(receiver_id):
-    return receiver_id.decode()
+    return 'to-' + receiver_id.decode().strip()
 
 
 queue_declared = {}
@@ -66,7 +78,7 @@ def route_to_receiver(ch, message):
 
 
 def get_mailbox_for_datagram(datagram):
-    return 'in-plugin-{}-{}-{}'.format(
+    return 'to-plugin-{}-{}-{}'.format(
         datagram['plugin_id'],
         datagram['plugin_major_version'],
         datagram['plugin_instance'])
@@ -77,8 +89,8 @@ def deploy_package(ch, message):
     logger.info('Deploying packages on %s: %s', message['receiver_id'], message['body'].decode())
 
 
-def log_test_message(ch, message):
-    logger.info('Got test message for %s!', message)
+def print_test(ch, message):
+    logger.info('Got test message: %s', message['body'].decode())
 
 
 def route_to_plugin(ch, message):
@@ -105,25 +117,6 @@ def process_message(ch, method, properties, body):
         do_actions_for_message(ch, message)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
-
-
-def get_rabbitmq_connection():
-    logger.info('Connecting to RabbitMQ server.')
-
-    credentials = pika.PlainCredentials(
-        username='admin',
-        password='admin')
-
-    parameters = pika.ConnectionParameters(
-        host='localhost',
-        credentials=credentials,
-        virtual_host='beehive')
-
-    connection = pika.BlockingConnection(parameters)
-
-    logger.info('Connected to RabbitMQ server.')
-
-    return connection
 
 
 def declare_incoming_message_queue(channel):
@@ -153,30 +146,26 @@ def start_message_processor(channel):
 
 
 def start_routing():
-    connection = get_rabbitmq_connection()
+    logger.info('Connecting to RabbitMQ server.')
+    connection = pika.BlockingConnection(connection_parameters)
+    logger.info('Connected to RabbitMQ server.')
+
     channel = connection.channel()
     declare_queues(channel)
     start_message_processor(channel)
 
 
-admin = b'admin'.rjust(16, b' ')
-node1 = b'node1'.rjust(16, b' ')
-node2 = b'node2'.rjust(16, b' ')
-
-rule_table = compile_rules([
-    ({'sender_id': admin, 'message_major_type': 0}, 'route_to_receiver'),
-    ({'sender_id': admin, 'message_major_type': 1}, 'route_to_receiver'),
-
-    # node type rules
-    # ({'receiver_id': b'0000000000000001', 'message_major_type': 0}, 'route_to_plugin'),
-    # ({'receiver_id': b'0000000000000001', 'message_major_type': 1}, 'deploy_package'),
-
-    # debugging
-    ({'message_major_type': 255}, 'log_test_message'),
-])
-
-
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('rulefile')
+    parser.add_argument('url')
+    args = parser.parse_args()
+
+    with open(args.rulefile) as file:
+        rule_table = compile_rules(json.load(file))
+
+    connection_parameters = pika.URLParameters(args.url)
+
     while True:
         try:
             start_routing()
