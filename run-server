@@ -1,8 +1,8 @@
 #!/bin/sh
 
 docker run \
-  --name test_rabbitmq \
-  --rm \
+  --name rabbitmq-dev \
+  -d
   -e RABBITMQ_DEFAULT_USER=admin \
   -e RABBITMQ_DEFAULT_PASS=testing \
   -p 5672:5672 \

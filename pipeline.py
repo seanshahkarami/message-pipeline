@@ -20,10 +20,13 @@ class Plugin:
             password=config.get('password', 'testing'))
 
         parameters = pika.ConnectionParameters(
-            credentials=credentials)
+            credentials=credentials,
+            virtual_host='beehive')
 
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
+
+        self.channel.queue_declare(self.queue, durable=True)
 
     def publish(self, body):
         datagram = pack_datagrams([{

@@ -55,12 +55,14 @@ def get_mailbox_for_receiver_id(receiver_id):
     return 'to-{}'.format(receiver_id.decode())
 
 
-# can abstract just a little and give context object to handler.
+queue_declared = {}
+
 
 def route_to_receiver(ch, message):
     logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
     mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
-    ch.basic_publish('', mailbox, pack_waggle_packets([message]))
+    ch.queue_declare(queue=mailbox, durable=True)
+    ch.basic_publish(exchange='', routing_key=mailbox, body=pack_waggle_packets([message]))
 
 
 def get_mailbox_for_datagram(datagram):
@@ -87,8 +89,9 @@ def route_to_plugin(ch, message):
         return
 
     for datagram in datagrams:
+        logger.info('Routing datagram to plugin %s %s %s.', datagram['plugin_id'], datagram['plugin_major_version'], datagram['plugin_instance'])
         mailbox = get_mailbox_for_datagram(datagram)
-        logger.info('Routing datagram to %s.', mailbox)
+        ch.queue_declare(queue=mailbox, durable=True)
         ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
 
@@ -113,7 +116,8 @@ def get_rabbitmq_connection():
 
     parameters = pika.ConnectionParameters(
         host='localhost',
-        credentials=credentials)
+        credentials=credentials,
+        virtual_host='beehive')
 
     connection = pika.BlockingConnection(parameters)
 

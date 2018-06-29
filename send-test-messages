@@ -9,8 +9,15 @@ routing_table = {
     (b'fedcba9876543210', b'fedcba9876543210'),
 }
 
+credentials = pika.PlainCredentials(
+    username='admin',
+    password='testing')
 
-parameters = pika.URLParameters('amqp://admin:testing@localhost')
+parameters = pika.ConnectionParameters(
+    host='localhost',
+    credentials=credentials,
+    virtual_host='beehive')
+
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
