@@ -104,21 +104,21 @@ def route_to_plugin(ch, message):
         ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
 
-def do_actions_for_message(ch, message):
+def perform_actions_for_message(ch, message):
     for action in get_actions_for_message(message):
         action(ch, message)
 
 
 def process_message(ch, method, properties, body):
     for message in unpack_waggle_packets(body):
-        do_actions_for_message(ch, message)
+        perform_actions_for_message(ch, message)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-def start_routing():
+def connect_to_broker_and_start_routing(broker_parameters):
     logger.info('Connecting to RabbitMQ server.')
-    connection = pika.BlockingConnection(connection_parameters)
+    connection = pika.BlockingConnection(broker_parameters)
     channel = connection.channel()
 
     logger.info('Starting message processor.')
@@ -131,22 +131,31 @@ def start_routing():
         logger.info('Stopped message processor.')
 
 
-if __name__ == '__main__':
+def load_rules_from_file(filename):
+    with open(filename) as file:
+        return compile_rules(json.load(file))
+
+
+def main():
+    global rulefile
+
     parser = argparse.ArgumentParser()
     parser.add_argument('rulefile')
     parser.add_argument('url')
     args = parser.parse_args()
 
-    with open(args.rulefile) as file:
-        rule_table = compile_rules(json.load(file))
-
-    connection_parameters = pika.URLParameters(args.url)
+    rule_table = load_rules_from_file(args.rulefile)
+    broker_parameters = pika.URLParameters(args.url)
 
     while True:
         try:
-            start_routing()
+            connect_to_broker_and_start_routing(broker_parameters)
         except KeyboardInterrupt:
             break
         except Exception:
             logger.exception('Unhandled exception occurred. Will retry...')
             time.sleep(5)
+
+
+if __name__ == '__main__':
+    main()
