@@ -18,20 +18,25 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
 
+def apply_ugly_normalize_rule_hack(rule):
+    try:
+        rule['sender_id'] = rule['sender_id'].ljust(16, ' ').encode()
+    except KeyError:
+        pass
+
+    try:
+        rule['receiver_id'] = rule['receiver_id'].ljust(16, ' ').encode()
+    except KeyError:
+        pass
+
+    return rule
+
+
 def compile_rules(rules):
     table = {}
 
     for rule, action in rules:
-        # ugly hack to normalize names
-        try:
-            rule['sender_id'] = rule['sender_id'].ljust(16, ' ').encode()
-        except KeyError:
-            pass
-
-        try:
-            rule['receiver_id'] = rule['receiver_id'].ljust(16, ' ').encode()
-        except KeyError:
-            pass
+        rule = apply_ugly_normalize_rule_hack(rule)
 
         ordered_rule = sorted(rule.items())
         keys = tuple(k for k, v in ordered_rule)
@@ -48,31 +53,34 @@ def compile_rules(rules):
     return table
 
 
-def get_actions_for_message(message):
+def get_actions_for_message(msg):
     for keys, patterns in rule_table.items():
         try:
-            vals = tuple(message[key] for key in keys)
-        except KeyError:
-            continue
-
-        try:
+            vals = tuple(msg[key] for key in keys)
             action = patterns[vals]
+            yield action
         except KeyError:
             continue
-
-        yield action
 
 
 def get_mailbox_for_receiver_id(receiver_id):
     return 'to-' + receiver_id.decode().strip()
 
 
-def route_to_receiver(ch, message):
-    logger.info('Routing message from %s to %s.', message['sender_id'], message['receiver_id'])
-    mailbox = get_mailbox_for_receiver_id(message['receiver_id'])
-    ch.queue_declare(queue=mailbox, durable=True)
-    ch.basic_publish(exchange='', routing_key=mailbox, body=pack_waggle_packets([message]))
+def route_to_receiver(ch, msg):
+    logger.info(
+        'Routing message from %s to %s.',
+        msg['sender_id'],
+        msg['receiver_id'],
+    )
 
+    mailbox = get_mailbox_for_receiver_id(msg['receiver_id'])
+    ch.queue_declare(queue=mailbox, durable=True)
+    ch.basic_publish(exchange='', routing_key=mailbox, body=pack_waggle_packets([msg]))
+
+
+# correct behavior should be to send whole message packet to plugin with data
+# packet inside..., not some special case...
 
 def get_mailbox_for_datagram(datagram):
     return 'to-plugin-{}-{}-{}'.format(
@@ -81,17 +89,17 @@ def get_mailbox_for_datagram(datagram):
         datagram['plugin_instance'])
 
 
-def deploy_package(ch, message):
-    logger.info('Deploying packages on %s: %s', message['receiver_id'], message['body'].decode())
+def deploy_package(ch, msg):
+    logger.info('Deploying packages on %s: %s', msg['receiver_id'], msg['body'].decode())
 
 
-def print_test(ch, message):
-    logger.info('Got test message: %s', message['body'].decode())
+def print_test(ch, msg):
+    logger.info('Got test message: %s', msg['body'].decode())
 
 
-def route_to_plugin(ch, message):
+def route_to_plugin(ch, msg):
     try:
-        datagrams = unpack_datagrams(message['body'])
+        datagrams = unpack_datagrams(msg['body'])
     except ValueError:
         logger.info('Dropping invalid datagrams.')
         return
@@ -103,16 +111,20 @@ def route_to_plugin(ch, message):
         ch.basic_publish('', mailbox, pack_datagrams([datagram]))
 
 
-def perform_actions_for_message(ch, message):
-    for action in get_actions_for_message(message):
-        action(ch, message)
+def process_waggle_message(ch, msg):
+    for action in get_actions_for_message(msg):
+        action(ch, msg)
 
 
-def process_message(ch, method, properties, body):
-    for message in unpack_waggle_packets(body):
-        perform_actions_for_message(ch, message)
+def publish_waggle_message(ch, queue, data):
+    pass
 
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+def process_rabbitmq_message(channel, method, properties, body):
+    for msg in unpack_waggle_packets(body):
+        process_waggle_message(channel, msg)
+
+    channel.basic_ack(delivery_tag=method.delivery_tag)
 
 
 def connect_to_broker_and_start_routing(broker_parameters):
@@ -122,7 +134,7 @@ def connect_to_broker_and_start_routing(broker_parameters):
 
     logger.info('Starting message processor.')
     channel.queue_declare(queue='messages', durable=True)
-    channel.basic_consume(process_message, 'messages')
+    channel.basic_consume(process_rabbitmq_message, 'messages')
 
     try:
         channel.start_consuming()
@@ -135,10 +147,7 @@ def load_rules_from_file(filename):
         return compile_rules(json.load(file))
 
 
-def main():
-    # TODO Make this a standard argument.
-    global rulefile
-
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('rulefile')
     parser.add_argument('url')
@@ -155,7 +164,3 @@ def main():
         except Exception:
             logger.exception('Unhandled exception occurred. Will retry...')
             time.sleep(5)
-
-
-if __name__ == '__main__':
-    main()
