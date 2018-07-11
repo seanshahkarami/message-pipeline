@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
-import argparse
 from pipeline import Plugin
 import time
-import os
-import pprint
 
-plugin = Plugin(
-    username='plugin-e5-0.1.7-1',
-    password='21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c')
+plugin = Plugin()
 
 while True:
     for msg in plugin.get_waiting_messages():
