@@ -59,7 +59,6 @@ def enable_plugin(plugin_dir):
 
     password = secrets.token_urlsafe(32)
 
-    print('enabling', username)
     add_rabbitmq_user(username, password)
 
     filename = 'run/{}'.format(username)
@@ -72,17 +71,19 @@ def enable_plugin(plugin_dir):
 
     os.chmod(filename, 0o755)
 
+    print('enabled', username)
 
-def enable_plugins(plugins):
+
+def enable_plugins(plugin_dirs):
     os.makedirs('run', exist_ok=True)
 
-    for plugin in plugins:
-        enable_plugin(plugin)
+    for plugin_dir in plugin_dirs:
+        enable_plugin(plugin_dir)
 
 
-def disable_plugins(plugins):
-    for plugin in plugins:
-        disable_plugin(plugin)
+def disable_plugins(plugin_dirs):
+    for plugin_dir in plugin_dirs:
+        disable_plugin(plugin_dir)
 
 
 def disable_plugin(plugin_dir):
@@ -103,6 +104,8 @@ def disable_plugin(plugin_dir):
     except Exception:
         pass
 
+    print('disabled', username)
+
 
 def read_config_file(filename):
     with open(filename) as file:
@@ -114,17 +117,17 @@ def main():
     subparsers = parser.add_subparsers(dest='subcommand', required=True)
 
     parser_enable = subparsers.add_parser('enable')
-    parser_enable.add_argument('plugins', nargs='+')
+    parser_enable.add_argument('plugin_dirs', nargs='+')
 
     parser_disable = subparsers.add_parser('disable')
-    parser_disable.add_argument('plugins', nargs='+')
+    parser_disable.add_argument('plugin_dirs', nargs='+')
 
     args = parser.parse_args()
 
     if args.subcommand == 'enable':
-        enable_plugins(args.plugins)
+        enable_plugins(args.plugin_dirs)
     elif args.subcommand == 'disable':
-        disable_plugins(args.plugins)
+        disable_plugins(args.plugin_dirs)
 
 
 if __name__ == '__main__':
