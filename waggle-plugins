@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import subprocess
 import os
+import secrets
+import subprocess
 
 
 def exec_rabbitmqctl(args):
     rabbitmqctl = ['docker', 'exec', '-ti', 'rabbitmq-dev', 'rabbitmqctl']
-    return subprocess.run(rabbitmqctl + args)
+    return subprocess.check_output(rabbitmqctl + args)
 
 
 def add_rabbitmq_user(username, password):
+    try:
+        exec_rabbitmqctl(['add_user', username, password])
+    except subprocess.CalledProcessError:
+        exec_rabbitmqctl(['change_password', username, password])
+
     inqueue = 'in-' + username
-
-    exec_rabbitmqctl(['add_user', username, password])
-
     config_permissions = '^{}$'.format(inqueue)
     write_permissions = '^data$'
     read_permissions = '^{}$'.format(inqueue)
@@ -30,9 +33,44 @@ def add_rabbitmq_user(username, password):
         ])
 
 
+run_plugin_template = '''
+#!/bin/sh
+
+export WAGGLE_PLUGIN_CREDENTIALS={username}:{password}
+
+{executable}
+'''.strip()
+
+
+def format_template(username, password, executable):
+    return run_plugin_template.format(
+        username=username,
+        password=password,
+        executable=executable)
+
+
 def enable_plugin(plugin_dir):
-    token = '21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c'
-    add_rabbitmq_user(plugin_dir, token)
+    config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
+
+    username = 'plugin-{}-{}-{}'.format(
+        config['plugin_id'],
+        config['plugin_version'],
+        config['plugin_instance'])
+
+    password = secrets.token_urlsafe(32)
+
+    print('enabling', username)
+    add_rabbitmq_user(username, password)
+
+    filename = 'run-{}'.format(username)
+
+    with open(filename, 'w') as file:
+        file.writelines(format_template(
+                username=username,
+                password=password,
+                executable=os.path.abspath(os.path.join(plugin_dir, 'plugin'))))
+
+    os.chmod(filename, 0o755)
 
 
 def read_config_file(filename):
@@ -44,18 +82,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('plugin_dir')
     args = parser.parse_args()
-
-    plugin_dir = os.path.abspath(args.plugin_dir)
-
-    config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
-
-    user_id = 'plugin-{}-{}-{}'.format(
-        config['plugin_id'],
-        config['plugin_version'],
-        config['plugin_instance'])
-
-    print('enable', user_id)
-    enable_plugin(user_id)
+    enable_plugin(args.plugin_dir)
 
 
 if __name__ == '__main__':
