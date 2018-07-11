@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+import argparse
+from pipeline import Plugin
+import time
+
+plugin = Plugin(
+    plugin_id=17,
+    plugin_major_version=1,
+)
+
+while True:
+    print('Processing waiting messages...')
+
+    for msg in plugin.get_waiting_messages():
+        print('run_id', plugin.run_id)
+        print(msg)
+
+    print('Doing some sensor work...')
+    time.sleep(3)
+    plugin.publish(b'some data to be sent. will usually be sensorgram data.')
+
+print('Done.')

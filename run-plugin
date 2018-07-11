@@ -1,0 +1,12 @@
+#!/bin/sh
+
+export WAGGLE_PLUGIN_ID=0
+export WAGGLE_PLUGIN_INSTANCE=0
+export WAGGLE_PLUGIN_VERSION=0.0.0
+export WAGGLE_PLUGIN_TOKEN=21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c
+
+basename $1
+
+# ./test-plugin
+
+# plugin_0_0_0

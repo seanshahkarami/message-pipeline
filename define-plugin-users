@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# part of plugin manager's job to allocate / set credentials
+
+docker exec -ti rabbitmq-dev rabbitmqctl add_user plugin-0-0-0 21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c
+docker exec -ti rabbitmq-dev rabbitmqctl set_permissions -p node1 plugin_0_0_0 ".*" ".*" ".*"

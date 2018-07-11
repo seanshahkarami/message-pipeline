@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+import subprocess
+import os
+
+
+def exec_rabbitmqctl(args):
+    rabbitmqctl = ['docker', 'exec', '-ti', 'rabbitmq-dev', 'rabbitmqctl']
+    return subprocess.run(rabbitmqctl + args)
+
+
+def add_rabbitmq_user(username, password):
+    inqueue = 'in-' + username
+
+    exec_rabbitmqctl(['add_user', username, password])
+
+    config_permissions = '^{}$'.format(inqueue)
+    write_permissions = '^data$'
+    read_permissions = '^{}$'.format(inqueue)
+
+    for vhost in ['node1', 'node2']:
+        exec_rabbitmqctl([
+            'set_permissions',
+            '-p', vhost,
+            username,
+            config_permissions,
+            write_permissions,
+            read_permissions,
+        ])
+
+
+def enable_plugin(plugin_dir):
+    token = '21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c'
+    add_rabbitmq_user(plugin_dir, token)
+
+    # with open(os.path.join(plugin_dir, 'token'), 'w') as file:
+    #     file.writelines(token)
+
+
+enable_plugin('plugin-e5-0.1.7-1')

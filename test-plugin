@@ -2,27 +2,18 @@
 import argparse
 from pipeline import Plugin
 import time
+import os
+import pprint
+import logging
 
-parser = argparse.ArgumentParser()
-parser.add_argument('plugin_id')
-parser.add_argument('plugin_major_version')
-parser.add_argument('plugin_instance')
-args = parser.parse_args()
+logging.basicConfig(level=logging.DEBUG)
 
-plugin = Plugin({
-    'plugin_id': int(args.plugin_id),
-    'plugin_major_version': int(args.plugin_major_version),
-    'plugin_instance': int(args.plugin_instance),
-})
+plugin = Plugin()
 
 while True:
-    print('processing waiting messages...')
+    # for msg in plugin.get_waiting_messages():
+    #     print('run_id', plugin.run_id)
+    #     print(msg)
 
-    for msg in plugin.get_waiting_messages():
-        print('run_id', plugin.run_id)
-        print(msg)
-
-    print('doing some sensor work...')
     time.sleep(3)
-
-print('done')
+    plugin.publish(b'some data to be sent')
