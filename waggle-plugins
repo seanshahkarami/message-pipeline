@@ -62,7 +62,7 @@ def enable_plugin(plugin_dir):
     print('enabling', username)
     add_rabbitmq_user(username, password)
 
-    filename = 'system/run-{}'.format(username)
+    filename = 'run/{}'.format(username)
 
     with open(filename, 'w') as file:
         file.writelines(format_template(
@@ -71,6 +71,27 @@ def enable_plugin(plugin_dir):
                 executable=os.path.abspath(os.path.join(plugin_dir, 'plugin'))))
 
     os.chmod(filename, 0o755)
+
+
+def enable_plugins(plugins):
+    os.makedirs('run', exist_ok=True)
+
+    for plugin in plugins:
+        enable_plugin(plugin)
+
+
+def disable_plugins(plugins):
+    os.makedirs('run', exist_ok=True)
+
+    for plugin in plugins:
+        print('disable', plugin)
+
+
+def list_plugins():
+    os.makedirs('run', exist_ok=True)
+
+    for filename in os.listdir('run'):
+        print(filename)
 
 
 def read_config_file(filename):
@@ -93,14 +114,11 @@ def main():
     args = parser.parse_args()
 
     if args.subcommand == 'enable':
-        for plugin in args.plugins:
-            enable_plugin(plugin)
-    elif args.subcommand == 'enable':
-        for plugin in args.plugins:
-            print('disable', plugin)
+        enable_plugins(args.plugins)
+    elif args.subcommand == 'disable':
+        disable_plugins(args.plugins)
     elif args.subcommand == 'list':
-        for filename in os.listdir('system'):
-            print(filename)
+        list_plugins()
 
 
 if __name__ == '__main__':
