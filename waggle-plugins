@@ -38,7 +38,7 @@ def add_rabbitmq_user(username, password):
         ])
 
 
-def format_template(credentials, executable, format='shell'):
+def format_template(credentials, executable, format='systemd'):
     template_dir = os.path.join('templates')
     template = read_file(os.path.join(template_dir, format))
     return template.format(credentials=credentials, executable=executable)
@@ -59,10 +59,13 @@ def enable_plugin(plugin_dir):
     filename = 'run/{}'.format(username)
     credentials = '{}:{}'.format(username, password)
 
+    service_script = format_template(
+        credentials=credentials,
+        executable=os.path.abspath(os.path.join(plugin_dir, 'plugin')),
+        format='shell')
+
     with open(filename, 'w') as file:
-        file.writelines(format_template(
-                credentials=credentials,
-                executable=os.path.abspath(os.path.join(plugin_dir, 'plugin'))))
+        file.writelines(service_script)
 
     os.chmod(filename, 0o755)
 
