@@ -81,17 +81,27 @@ def enable_plugins(plugins):
 
 
 def disable_plugins(plugins):
-    os.makedirs('run', exist_ok=True)
-
     for plugin in plugins:
-        print('disable', plugin)
+        disable_plugin(plugin)
 
 
-def list_plugins():
-    os.makedirs('run', exist_ok=True)
+def disable_plugin(plugin_dir):
+    config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
 
-    for filename in os.listdir('run'):
-        print(filename)
+    username = 'plugin-{}-{}-{}'.format(
+        config['plugin_id'],
+        config['plugin_version'],
+        config['plugin_instance'])
+
+    try:
+        exec_rabbitmqctl(['delete_user', username])
+    except subprocess.CalledProcessError:
+        pass
+
+    try:
+        os.remove('run/{}'.format(username))
+    except Exception:
+        pass
 
 
 def read_config_file(filename):
@@ -109,16 +119,12 @@ def main():
     parser_disable = subparsers.add_parser('disable')
     parser_disable.add_argument('plugins', nargs='+')
 
-    subparsers.add_parser('list')
-
     args = parser.parse_args()
 
     if args.subcommand == 'enable':
         enable_plugins(args.plugins)
     elif args.subcommand == 'disable':
         disable_plugins(args.plugins)
-    elif args.subcommand == 'list':
-        list_plugins()
 
 
 if __name__ == '__main__':
