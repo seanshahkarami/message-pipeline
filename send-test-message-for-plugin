@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+import pika
+import time
+from waggle.protocol.v0 import *
+
+routing_table = {
+    (b'0123456789abcdef', b'fedcba9876543210'),
+    (b'0123456789abcdef', b'0123456789abcdef'),
+    (b'fedcba9876543210', b'fedcba9876543210'),
+}
+
+credentials = pika.PlainCredentials(
+    username='admin',
+    password='admin')
+
+parameters = pika.ConnectionParameters(
+    credentials=credentials,
+    virtual_host='beehive')
+
+connection = pika.BlockingConnection(parameters)
+channel = connection.channel()
+
+admin = b'admin'.ljust(16, b' ')
+node1 = b'node1'.ljust(16, b' ')
+node2 = b'node2'.ljust(16, b' ')
+
+data = pack_waggle_packets([
+    {
+        'sender_id': admin,
+        'receiver_id': node1,
+        'body': b'hello node1 ~ admin',
+        'message_major_type': 255,
+    },
+    {
+        'sender_id': admin,
+        'receiver_id': node2,
+        'body': b'hello node2 ~ admin',
+        'message_major_type': 255,
+    },
+    {
+        'sender_id': admin,
+        'receiver_id': node1,
+        'body': pack_datagrams([
+            {
+                'plugin_id': 1,
+                'body': b'hello 1',
+            },
+            {
+                'plugin_id': 2,
+                'body': b'hello 2',
+            },
+            {
+                'plugin_id': 1,
+                'plugin_instance': 1,
+                'body': b'hello 3',
+            },
+        ]),
+    },
+    {
+        'sender_id': admin,
+        'receiver_id': node2,
+        'message_major_type': 1,
+        'body': b'rabbitmq-server opencv',
+    }
+])
+
+while True:
+    channel.queue_declare(queue='messages', durable=True)
+    channel.basic_publish('', 'messages', data)
+    time.sleep(5)

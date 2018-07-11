@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+from pipeline import Plugin
+import time
+
+plugin = Plugin()
+
+while True:
+    for msg in plugin.get_waiting_messages():
+        print('Got a message!')
+        print(msg)
+
+    print('Sending sensor data!')
+    plugin.publish(b'would usually be sending packed sensorgram data here')
+
+    time.sleep(1)
