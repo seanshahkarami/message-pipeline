@@ -55,7 +55,7 @@ def message_handler(ch, method, properties, body):
         }
     ])
 
-    print('ok', data)
+    print('ok', user_id, data)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 

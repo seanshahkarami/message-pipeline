@@ -6,7 +6,10 @@ plugin = Plugin()
 
 while True:
     for msg in plugin.get_waiting_messages():
+        print('Got a message!')
         print(msg)
 
-    time.sleep(3)
-    plugin.publish(b'some data to be sent')
+    print('Sending sensor data!')
+    plugin.publish(b'would usually be sending packed sensorgram data here')
+
+    time.sleep(1)
