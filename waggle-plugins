@@ -88,6 +88,8 @@ def main():
     parser_disable = subparsers.add_parser('disable')
     parser_disable.add_argument('plugins', nargs='+')
 
+    subparsers.add_parser('list')
+
     args = parser.parse_args()
 
     if args.subcommand == 'enable':
@@ -96,6 +98,9 @@ def main():
     elif args.subcommand == 'enable':
         for plugin in args.plugins:
             print('disable', plugin)
+    elif args.subcommand == 'list':
+        for filename in os.listdir('system'):
+            print(filename)
 
 
 if __name__ == '__main__':
