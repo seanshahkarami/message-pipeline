@@ -9,14 +9,13 @@ from waggle.protocol.v0 import *
 
 class Plugin:
 
-    def __init__(self, username=None, password=None):
+    def __init__(self, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
 
-        if username is None:
-            username = os.environ['WAGGLE_PLUGIN_USER']
-
-        if password is None:
-            password = os.environ['WAGGLE_PLUGIN_TOKEN']
+        if credentials is None:
+            username, password = os.environ['WAGGLE_PLUGIN_CREDENTIALS'].split(':')
+        else:
+            username, password = credentials
 
         self.user_id = username
         self.run_id = secrets.randbelow(0xffffffff)

@@ -1,6 +1,5 @@
 #!/bin/sh
 
-export WAGGLE_PLUGIN_USER=plugin-e5-0.1.7-1
-export WAGGLE_PLUGIN_TOKEN=21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c
+export WAGGLE_PLUGIN_CREDENTIALS=plugin-e5-0.1.7-1:21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c
 
 ./test-plugin
