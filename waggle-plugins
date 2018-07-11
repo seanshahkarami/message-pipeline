@@ -62,7 +62,7 @@ def enable_plugin(plugin_dir):
     print('enabling', username)
     add_rabbitmq_user(username, password)
 
-    filename = 'run-{}'.format(username)
+    filename = 'system/run-{}'.format(username)
 
     with open(filename, 'w') as file:
         file.writelines(format_template(
@@ -80,9 +80,22 @@ def read_config_file(filename):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('plugin_dir')
+    subparsers = parser.add_subparsers(dest='subcommand', required=True)
+
+    parser_enable = subparsers.add_parser('enable')
+    parser_enable.add_argument('plugins', nargs='+')
+
+    parser_disable = subparsers.add_parser('disable')
+    parser_disable.add_argument('plugins', nargs='+')
+
     args = parser.parse_args()
-    enable_plugin(args.plugin_dir)
+
+    if args.subcommand == 'enable':
+        for plugin in args.plugins:
+            enable_plugin(plugin)
+    elif args.subcommand == 'enable':
+        for plugin in args.plugins:
+            print('disable', plugin)
 
 
 if __name__ == '__main__':
