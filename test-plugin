@@ -4,16 +4,14 @@ from pipeline import Plugin
 import time
 import os
 import pprint
-import logging
 
-logging.basicConfig(level=logging.DEBUG)
-
-plugin = Plugin()
+plugin = Plugin(
+    username='plugin-e5-0.1.7-1',
+    password='21bfa177f9a3bd662e1d53c10ce8072ac6ac907f397d311f3993b956cf2f9a9c')
 
 while True:
-    # for msg in plugin.get_waiting_messages():
-    #     print('run_id', plugin.run_id)
-    #     print(msg)
+    for msg in plugin.get_waiting_messages():
+        print(msg)
 
     time.sleep(3)
     plugin.publish(b'some data to be sent')
