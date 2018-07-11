@@ -1,0 +1,14 @@
+[Unit]
+Description=...
+After=waggle-platform.target
+ConditionPathExists=/root/fs_locked
+
+[Service]
+Environment=WAGGLE_PLUGIN_CREDENTIALS={credentials}
+ExecStart={executable}
+
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=waggle-platform.target

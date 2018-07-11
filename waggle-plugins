@@ -6,6 +6,11 @@ import secrets
 import subprocess
 
 
+def read_file(filename):
+    with open(filename) as file:
+        return file.read()
+
+
 def exec_rabbitmqctl(args):
     rabbitmqctl = ['docker', 'exec', '-ti', 'rabbitmq-dev', 'rabbitmqctl']
     return subprocess.check_output(rabbitmqctl + args)
@@ -33,20 +38,10 @@ def add_rabbitmq_user(username, password):
         ])
 
 
-run_plugin_template = '''
-#!/bin/sh
-
-export WAGGLE_PLUGIN_CREDENTIALS={username}:{password}
-
-{executable}
-'''.strip()
-
-
-def format_template(username, password, executable):
-    return run_plugin_template.format(
-        username=username,
-        password=password,
-        executable=executable)
+def format_template(credentials, executable, format='shell'):
+    template_dir = os.path.join('templates')
+    template = read_file(os.path.join(template_dir, format))
+    return template.format(credentials=credentials, executable=executable)
 
 
 def enable_plugin(plugin_dir):
@@ -62,11 +57,11 @@ def enable_plugin(plugin_dir):
     add_rabbitmq_user(username, password)
 
     filename = 'run/{}'.format(username)
+    credentials = '{}:{}'.format(username, password)
 
     with open(filename, 'w') as file:
         file.writelines(format_template(
-                username=username,
-                password=password,
+                credentials=credentials,
                 executable=os.path.abspath(os.path.join(plugin_dir, 'plugin'))))
 
     os.chmod(filename, 0o755)
