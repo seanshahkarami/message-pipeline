@@ -36,8 +36,21 @@ class Plugin:
             queue=self.queue,
             durable=True)
 
-    def publish(self, body):
+    def publish(self, body, receiver=None):
         self.logger.debug('Publishing body %s', body)
+
+        if receiver is None:
+            receiver = (b'00000000', b'00000000')
+
+        packet = pack_waggle_packets([
+            {
+                'sender_id': b'00000000',
+                'sender_sub_id': b'00000000',
+                'receiver_id': receiver[0],
+                'receiver_sub_id': receiver[1],
+                'body': body,
+            }
+        ])
 
         self.channel.basic_publish(
             exchange='data',
@@ -45,7 +58,7 @@ class Plugin:
             properties=pika.BasicProperties(
                 delivery_mode=2,
                 user_id=self.user_id),
-            body=body)
+            body=packet)
 
     def get_waiting_messages(self):
         while True:
@@ -55,13 +68,13 @@ class Plugin:
                 break
 
             try:
-                datagrams = unpack_datagrams(body)
+                messages = unpack_waggle_packets(body)
             except ValueError:
                 self.channel.basic_ack(delivery_tag=method.delivery_tag)
-                print('Dropping invalid datagrams.')
+                print('Dropping invalid packets.')
                 continue
 
-            for datagram in datagrams:
-                yield datagram
+            for message in messages:
+                yield message
 
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
