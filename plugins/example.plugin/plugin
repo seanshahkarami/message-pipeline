@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 from waggle.protocol.v0.pipeline import Plugin
-from waggle.protocol.v0 import pack_message_for_sensorgrams
+from waggle.protocol.v0 import pack_sensor_message
 
 
 plugin = Plugin()
@@ -13,9 +13,10 @@ while True:
 
     print('Sending sensor data!')
 
-    msg = pack_message_for_sensorgrams([
+    msg = pack_sensor_message([
         {'sensor_id': 1, 'parameter_id': 1, 'value': b'111'},
         {'sensor_id': 1, 'parameter_id': 2, 'value': b'222222'},
+        {'sensor_id': 232, 'parameter_id': 100, 'value': b'321'}
     ])
 
     plugin.publish(msg)

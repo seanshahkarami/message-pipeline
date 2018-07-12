@@ -24,7 +24,7 @@ def add_rabbitmq_user(username, password):
 
     inqueue = 'in-' + username
     config_permissions = '^{}$'.format(inqueue)
-    write_permissions = '^data$'
+    write_permissions = '^publish$'
     read_permissions = '^{}$'.format(inqueue)
 
     for vhost in ['node1', 'node2']:

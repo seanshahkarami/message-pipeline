@@ -68,6 +68,13 @@ def message_handler(ch, method, properties, body):
                 }
             ])
 
+            ch.basic_publish(
+              exchange='',
+              routing_key='to-beehive',
+              properties=pika.BasicProperties(
+                delivery_mode=2),
+              body=data)
+
             print('ok', user_id, data)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -83,13 +90,12 @@ def main():
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
-    queue = 'data'
+    channel.exchange_declare(exchange='publish', exchange_type='fanout', durable=True)
+    channel.queue_declare(queue='validate', durable=True)
+    channel.queue_declare(queue='to-beehive', durable=True)
+    channel.queue_bind(exchange='publish', queue='validate')
 
-    channel.queue_declare(
-      queue=queue,
-      durable=True)
-
-    channel.basic_consume(message_handler, queue)
+    channel.basic_consume(message_handler, 'validate')
     channel.start_consuming()
 
 
