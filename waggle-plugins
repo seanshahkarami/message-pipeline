@@ -6,52 +6,7 @@ import requests
 import secrets
 
 
-def read_file(filename):
-    with open(filename) as file:
-        return file.read()
-
-
-def read_config_file(filename):
-    with open(filename) as file:
-        return json.load(file)
-
-
-rabbitmq_url = 'http://localhost:15672/api'
-
-
-def add_user(username, password):
-    add_rabbitmq_user_with_password(username, password)
-    set_rabbitmq_user_permissions(username)
-
-
-def remove_user(username):
-    url = rabbitmq_url + '/users/{}'.format(username)
-    requests.delete(url, auth=('admin', 'admin'))
-
-
-def add_rabbitmq_user_with_password(username, password):
-    data = json.dumps({
-        'name': username,
-        'password': password,
-        'tags': '',
-    })
-
-    url = rabbitmq_url + '/users/{}'.format(username)
-    requests.put(url, data=data, auth=('admin', 'admin'))
-
-
-def set_rabbitmq_user_permissions(username):
-    inqueue = 'in-' + username
-
-    data = json.dumps({
-        'configure': '^{}$'.format(inqueue),
-        'write': '^publish$',
-        'read': '^{}$'.format(inqueue),
-    })
-
-    url = rabbitmq_url + '/permissions/{}/{}'.format('node1', username)
-    requests.put(url, data=data, auth=('admin', 'admin'))
-
+RABBITMQ_URL = 'http://localhost:15672/api'
 
 SERVICE_TEMPLATE = '''
 #!/bin/sh
@@ -64,14 +19,58 @@ export WAGGLE_PLUGIN_CREDENTIALS={credentials}
 SERVICE_DIR = 'run'
 
 
+def read_file(filename):
+    with open(filename) as file:
+        return file.read()
+
+
+def read_config_file(filename):
+    with open(filename) as file:
+        return json.load(file)
+
+
+def add_user(username, password):
+    add_rabbitmq_user_with_password(username, password)
+    set_rabbitmq_user_permissions(username)
+
+
+def remove_user(username):
+    url = RABBITMQ_URL + '/users/{}'.format(username)
+    requests.delete(url, auth=('admin', 'admin'))
+
+
+def add_rabbitmq_user_with_password(username, password):
+    data = json.dumps({
+        'name': username,
+        'password': password,
+        'tags': '',
+    })
+
+    url = RABBITMQ_URL + '/users/{}'.format(username)
+    requests.put(url, data=data, auth=('admin', 'admin'))
+
+
+def set_rabbitmq_user_permissions(username):
+    inqueue = 'in-' + username
+
+    data = json.dumps({
+        'configure': '^{}$'.format(inqueue),
+        'write': '^publish$',
+        'read': '^{}$'.format(inqueue),
+    })
+
+    url = RABBITMQ_URL + '/permissions/{}/{}'.format('node1', username)
+    requests.put(url, data=data, auth=('admin', 'admin'))
+
+
 def add_service(name, credentials, executable):
     formatted = SERVICE_TEMPLATE.format(
         credentials=credentials,
         executable=executable).strip()
 
-    service_filename = 'run/{}'.format(name)
+    os.makedirs(SERVICE_DIR, exist_ok=True)
 
-    os.makedirs('run', exist_ok=True)
+    service_filename = os.path.join(SERVICE_DIR, name)
 
     with open(service_filename, 'w') as file:
         file.writelines(formatted)
