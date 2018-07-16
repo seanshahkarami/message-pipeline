@@ -91,10 +91,14 @@ def get_username_for_plugin_config(config):
         config['plugin_instance'])
 
 
+def generate_random_password():
+    return secrets.token_urlsafe(32)
+
+
 def enable_plugin(plugin_dir):
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
     username = get_username_for_plugin_config(config)
-    password = secrets.token_urlsafe(32)
+    password = generate_random_password()
     credentials = '{}:{}'.format(username, password)
     executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
     add_user(username, password)
