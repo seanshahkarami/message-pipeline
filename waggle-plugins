@@ -74,6 +74,7 @@ def rabbitmqctl_set_permissions(username, configure, read, write):
     return subprocess.check_output([
         'rabbitmqctl',
         'set_permissions',
+        username,
         configure,
         write,
         read,
