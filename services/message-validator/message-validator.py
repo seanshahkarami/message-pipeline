@@ -6,6 +6,7 @@ import re
 from waggle.protocol.v0 import *
 
 
+# these can become flags...otherwise, will attempt to autodetect
 WAGGLE_NODE_ID = os.environ.get('WAGGLE_NODE_ID', '00000000').encode()
 WAGGLE_DEVICE_ID = os.environ.get('WAGGLE_DEVICE_ID', '00000000').encode()
 
