@@ -11,22 +11,32 @@ def read_file(filename):
         return file.read()
 
 
-apiurl = 'http://localhost:15672/api'
+def read_config_file(filename):
+    with open(filename) as file:
+        return json.load(file)
 
 
-def setup_rabbitmq_user(username, password):
-    set_rabbitmq_user_password(username, password)
+rabbitmq_url = 'http://localhost:15672/api'
+
+
+def add_user(username, password):
+    add_rabbitmq_user_with_password(username, password)
     set_rabbitmq_user_permissions(username)
 
 
-def set_rabbitmq_user_password(username, password):
+def remove_user(username):
+    url = rabbitmq_url + '/users/{}'.format(username)
+    requests.delete(url, auth=('admin', 'admin'))
+
+
+def add_rabbitmq_user_with_password(username, password):
     data = json.dumps({
         'name': username,
         'password': password,
         'tags': '',
     })
 
-    url = '{}/users/{}'.format(apiurl, username)
+    url = rabbitmq_url + '/users/{}'.format(username)
     requests.put(url, data=data, auth=('admin', 'admin'))
 
 
@@ -39,78 +49,65 @@ def set_rabbitmq_user_permissions(username):
         'read': '^{}$'.format(inqueue),
     })
 
-    url = '{}/permissions/{}/{}'.format(apiurl, 'node1', username)
+    url = rabbitmq_url + '/permissions/{}/{}'.format('node1', username)
     requests.put(url, data=data, auth=('admin', 'admin'))
 
 
-def format_template(credentials, executable, format='systemd'):
-    template_dir = os.path.join('templates')
-    template = read_file(os.path.join(template_dir, format))
-    return template.format(credentials=credentials, executable=executable)
+SERVICE_TEMPLATE = '''
+#!/bin/sh
+
+export WAGGLE_PLUGIN_CREDENTIALS={credentials}
+
+{executable}
+'''
+
+
+def add_service(name, credentials, executable):
+    formatted = SERVICE_TEMPLATE.format(
+        credentials=credentials,
+        executable=executable).strip()
+
+    service_filename = 'run/{}'.format(name)
+
+    os.makedirs('run', exist_ok=True)
+
+    with open(service_filename, 'w') as file:
+        file.writelines(formatted)
+
+    os.chmod(service_filename, 0o755)
+
+
+def remove_service(name):
+    try:
+        os.remove('run/{}'.format(name))
+    except OSError:
+        pass
+
+
+def get_username_for_plugin_config(config):
+    return 'plugin-{}-{}-{}'.format(
+        config['plugin_id'],
+        config['plugin_version'],
+        config['plugin_instance'])
 
 
 def enable_plugin(plugin_dir):
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
-
-    username = 'plugin-{}-{}-{}'.format(
-        config['plugin_id'],
-        config['plugin_version'],
-        config['plugin_instance'])
-
+    username = get_username_for_plugin_config(config)
     password = secrets.token_urlsafe(32)
-
-    setup_rabbitmq_user(username, password)
-
-    filename = 'run/{}'.format(username)
     credentials = '{}:{}'.format(username, password)
-
-    service_script = format_template(
-        credentials=credentials,
-        executable=os.path.abspath(os.path.join(plugin_dir, 'plugin')),
-        format='shell')
-
-    with open(filename, 'w') as file:
-        file.writelines(service_script)
-
-    os.chmod(filename, 0o755)
-
+    executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
+    add_user(username, password)
+    add_service(username, credentials, executable)
     print('enabled', username)
-
-
-def enable_plugins(plugin_dirs):
-    os.makedirs('run', exist_ok=True)
-
-    for plugin_dir in plugin_dirs:
-        enable_plugin(plugin_dir)
-
-
-def disable_plugins(plugin_dirs):
-    for plugin_dir in plugin_dirs:
-        disable_plugin(plugin_dir)
 
 
 def disable_plugin(plugin_dir):
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
-
-    username = 'plugin-{}-{}-{}'.format(
-        config['plugin_id'],
-        config['plugin_version'],
-        config['plugin_instance'])
-
-    url = '{}/users/{}'.format(apiurl, username)
-    requests.delete(url, auth=('admin', 'admin'))
-
-    try:
-        os.remove('run/{}'.format(username))
-    except Exception:
-        pass
-
+    username = get_username_for_plugin_config(config)
+    remove_user(username)
+    remove_service(username)
     print('disabled', username)
-
-
-def read_config_file(filename):
-    with open(filename) as file:
-        return json.load(file)
 
 
 def main():
@@ -127,9 +124,11 @@ def main():
     args = parser.parse_args()
 
     if args.subcommand == 'enable':
-        enable_plugins(args.plugin_dirs)
+        for plugin in args.plugin_dirs:
+            enable_plugin(plugin)
     elif args.subcommand == 'disable':
-        disable_plugins(args.plugin_dirs)
+        for plugin in args.plugin_dirs:
+            disable_plugin(plugin)
 
 
 if __name__ == '__main__':
