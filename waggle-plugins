@@ -123,7 +123,7 @@ def disable_plugin(plugin_dir):
 def main():
     parser = argparse.ArgumentParser()
 
-    subparsers = parser.add_subparsers(dest='subcommand', required=True)
+    subparsers = parser.add_subparsers(dest='subcommand')
 
     parser_enable = subparsers.add_parser('enable')
     parser_enable.add_argument('plugin_dirs', nargs='+')
@@ -139,6 +139,8 @@ def main():
     elif args.subcommand == 'disable':
         for plugin in args.plugin_dirs:
             disable_plugin(plugin)
+    else:
+        parser.print_help()
 
 
 if __name__ == '__main__':
