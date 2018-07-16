@@ -61,6 +61,8 @@ export WAGGLE_PLUGIN_CREDENTIALS={credentials}
 {executable}
 '''
 
+SERVICE_DIR = 'run'
+
 
 def add_service(name, credentials, executable):
     formatted = SERVICE_TEMPLATE.format(
@@ -74,12 +76,12 @@ def add_service(name, credentials, executable):
     with open(service_filename, 'w') as file:
         file.writelines(formatted)
 
-    os.chmod(service_filename, 0o755)
+    os.chmod(service_filename, 0o700)
 
 
 def remove_service(name):
     try:
-        os.remove('run/{}'.format(name))
+        os.remove(os.path.join(SERVICE_DIR, name))
     except OSError:
         pass
 
