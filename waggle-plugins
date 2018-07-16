@@ -4,6 +4,7 @@ import json
 import os
 import random
 import requests
+import subprocess
 import string
 
 SERVICE_BACKEND = os.environ.get('SERVICE_BACKEND', 'shell')
@@ -32,37 +33,59 @@ def read_config_file(filename):
 
 
 def add_user(username, password):
-    add_rabbitmq_user_with_password(username, password)
-    set_rabbitmq_user_permissions(username)
+    try:
+        rabbitmqctl_add_user(username, password)
+    except subprocess.CalledProcessError:
+        rabbitmqctl_change_password(username, password)
+
+    queue = 'in-' + username
+
+    rabbitmqctl_set_permissions(
+        username,
+        configure='^{}$'.format(queue),
+        write='^publish$',
+        read='^{}$'.format(queue))
 
 
 def remove_user(username):
-    url = RABBITMQ_URL + '/users/{}'.format(username)
-    requests.delete(url, auth=('admin', 'admin'))
+    rabbitmqctl_delete_user(username)
 
 
-def add_rabbitmq_user_with_password(username, password):
-    data = json.dumps({
-        'name': username,
-        'password': password,
-        'tags': '',
-    })
-
-    url = RABBITMQ_URL + '/users/{}'.format(username)
-    requests.put(url, data=data, auth=('admin', 'admin'))
+def rabbitmqctl_add_user(username, password):
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'add_user',
+        username,
+        password
+    ])
 
 
-def set_rabbitmq_user_permissions(username):
-    inqueue = 'in-' + username
+def rabbitmqctl_change_password(username, password):
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'change_password',
+        username,
+        password,
+    ])
 
-    data = json.dumps({
-        'configure': '^{}$'.format(inqueue),
-        'write': '^publish$',
-        'read': '^{}$'.format(inqueue),
-    })
 
-    url = RABBITMQ_URL + '/permissions/{}/{}'.format('node1', username)
-    requests.put(url, data=data, auth=('admin', 'admin'))
+def rabbitmqctl_set_permissions(username, configure, read, write):
+    # support for -v argument?
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'set_permissions',
+        configure,
+        write,
+        read,
+    ])
+
+
+def rabbitmqctl_delete_user(username):
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'delete_user',
+        username,
+    ])
 
 
 def add_service(name, credentials, executable):
