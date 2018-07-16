@@ -4,7 +4,6 @@ import json
 import os
 import requests
 import secrets
-import subprocess
 
 
 def read_file(filename):
@@ -15,7 +14,12 @@ def read_file(filename):
 apiurl = 'http://localhost:15672/api'
 
 
-def add_rabbitmq_user(username, password):
+def setup_rabbitmq_user(username, password):
+    set_rabbitmq_user_password(username, password)
+    set_rabbitmq_user_permissions(username)
+
+
+def set_rabbitmq_user_password(username, password):
     data = json.dumps({
         'name': username,
         'password': password,
@@ -24,8 +28,9 @@ def add_rabbitmq_user(username, password):
 
     url = '{}/users/{}'.format(apiurl, username)
     requests.put(url, data=data, auth=('admin', 'admin'))
-    # check for errors here!!!
 
+
+def set_rabbitmq_user_permissions(username):
     inqueue = 'in-' + username
 
     data = json.dumps({
@@ -54,7 +59,7 @@ def enable_plugin(plugin_dir):
 
     password = secrets.token_urlsafe(32)
 
-    add_rabbitmq_user(username, password)
+    setup_rabbitmq_user(username, password)
 
     filename = 'run/{}'.format(username)
     credentials = '{}:{}'.format(username, password)
