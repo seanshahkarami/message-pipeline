@@ -1,5 +1,0 @@
-#!/bin/sh
-
-export WAGGLE_PLUGIN_CREDENTIALS={credentials}
-
-{executable}
