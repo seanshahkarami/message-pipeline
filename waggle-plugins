@@ -2,9 +2,11 @@
 import argparse
 import json
 import os
+import random
 import requests
-import secrets
+import string
 
+SERVICE_BACKEND = os.environ.get('SERVICE_BACKEND', 'shell')
 
 RABBITMQ_URL = 'http://localhost:15672/api'
 
@@ -92,8 +94,11 @@ def get_username_for_plugin_config(config):
         config['plugin_instance'])
 
 
+password_characters = string.ascii_letters + string.digits
+
+
 def generate_random_password():
-    return secrets.token_urlsafe(32)
+    return ''.join(random.choice(password_characters) for _ in range(32))
 
 
 def enable_plugin(plugin_dir):
