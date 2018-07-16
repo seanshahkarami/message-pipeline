@@ -2,13 +2,16 @@
 import argparse
 import pika
 from waggle.protocol.v0 import unpack_waggle_packets
+from waggle.protocol.v0 import unpack_datagrams
 
 
 def message_handler(ch, method, properties, body):
-    for datagram in unpack_waggle_packets(body):
-        print('---')
-        print('saving datagram in db')
-        print(datagram)
+    for message in unpack_waggle_packets(body):
+        print('--- message')
+        print(message)
+        for datagram in unpack_datagrams(message['body']):
+            print('--- datagram')
+            print(datagram)
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 

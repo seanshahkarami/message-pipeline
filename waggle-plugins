@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import requests
 import secrets
 import subprocess
 
@@ -11,31 +12,30 @@ def read_file(filename):
         return file.read()
 
 
-def exec_rabbitmqctl(args):
-    rabbitmqctl = ['docker', 'exec', '-ti', 'rabbitmq-dev', 'rabbitmqctl']
-    return subprocess.check_output(rabbitmqctl + args)
+apiurl = 'http://localhost:15672/api'
 
 
 def add_rabbitmq_user(username, password):
-    try:
-        exec_rabbitmqctl(['add_user', username, password])
-    except subprocess.CalledProcessError:
-        exec_rabbitmqctl(['change_password', username, password])
+    data = json.dumps({
+        'name': username,
+        'password': password,
+        'tags': '',
+    })
+
+    url = '{}/users/{}'.format(apiurl, username)
+    requests.put(url, data=data, auth=('admin', 'admin'))
+    # check for errors here!!!
 
     inqueue = 'in-' + username
-    config_permissions = '^{}$'.format(inqueue)
-    write_permissions = '^publish$'
-    read_permissions = '^{}$'.format(inqueue)
 
-    for vhost in ['node1', 'node2']:
-        exec_rabbitmqctl([
-            'set_permissions',
-            '-p', vhost,
-            username,
-            config_permissions,
-            write_permissions,
-            read_permissions,
-        ])
+    data = json.dumps({
+        'configure': '^{}$'.format(inqueue),
+        'write': '^publish$',
+        'read': '^{}$'.format(inqueue),
+    })
+
+    url = '{}/permissions/{}/{}'.format(apiurl, 'node1', username)
+    requests.put(url, data=data, auth=('admin', 'admin'))
 
 
 def format_template(credentials, executable, format='systemd'):
@@ -92,10 +92,8 @@ def disable_plugin(plugin_dir):
         config['plugin_version'],
         config['plugin_instance'])
 
-    try:
-        exec_rabbitmqctl(['delete_user', username])
-    except subprocess.CalledProcessError:
-        pass
+    url = '{}/users/{}'.format(apiurl, username)
+    requests.delete(url, auth=('admin', 'admin'))
 
     try:
         os.remove('run/{}'.format(username))
@@ -112,6 +110,7 @@ def read_config_file(filename):
 
 def main():
     parser = argparse.ArgumentParser()
+
     subparsers = parser.add_subparsers(dest='subcommand', required=True)
 
     parser_enable = subparsers.add_parser('enable')
