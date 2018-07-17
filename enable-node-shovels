@@ -11,5 +11,5 @@ rabbitmqctl set_parameter shovel shovel-messages-from-beehive '{
 "dest-uri": "amqp://localhost",
 "dest-queue": "messages",
 "src-uri": "amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer",
-"src-exchange": "to-node-00000001"
+"src-queue": "to-node-0000000000000001"
 }'

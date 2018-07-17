@@ -1,69 +1,52 @@
 #!/usr/bin/env python3
 import argparse
-from collections import defaultdict
 import logging
 import pika
-import sqlite3
-from waggle.protocol.v0 import pack_waggle_packets
-from waggle.protocol.v0 import unpack_waggle_packets
+from waggle.protocol.v0 import pack_waggle_packets, unpack_waggle_packets
+from waggle.protocol.v0 import pack_datagrams, unpack_datagrams
 
 
-class Router:
-
-    def __init__(self, routing_table):
-        self.routing_table = routing_table
-
-    def route_message_data(self, message_data):
-        routes = defaultdict(list)
-
-        for message in unpack_waggle_packets(message_data):
-            if not self.routing_table.is_message_routable(message):
-                logging.info('Dropping message %s.', message)
-                continue
-
-            route = self.routing_table.get_message_route(message)
-            routes[route].append(message)
-
-        for route, messages in routes.items():
-            logging.info('Routing message %s.', message)
-            yield pack_waggle_packets(messages), route
-
-
-class MockRoutingTable:
-
-    def __init__(self, rules):
-        self.rules = rules
-
-    def is_message_routable(self, message):
-        if self.rules is True:
-            return True
-        if self.rules is False:
-            return False
-        raise NotImplementedError('General rules not implemented yet.')
-
-    def get_message_route(self, message):
-        return 'to-node-{}'.format(message['receiver_id'])
-
-
-class SqliteRoutingTable:
-
-    def __init__(self, filename):
-        self.conn = sqlite3.connect(filename)
-
-    def is_message_routable(self, message):
-        return False
-
-    def get_message_route(self, message):
-        return 'to-node-{}'.format(message['receiver_id'])
-
-
-class NodeRoutingTable:
+class BeehiveRouter:
 
     def is_message_routable(self, message):
         return True
 
-    def get_message_route(self, message):
-        return 'to-device-{}'.format(message['receiver_sub_id'])
+    def generate_message_routes(self, message_data):
+        for message in unpack_waggle_packets(message_data):
+            if not self.is_message_routable(message):
+                logging.info('Dropping message %s.', message)
+                continue
+
+            route_data = pack_waggle_packets([message])
+            route_name = 'to-node-{}'.format(message['receiver_sub_id'])
+            yield route_data, route_name
+
+
+class NodeRouter:
+
+    def generate_message_routes(self, message_data):
+        for message in unpack_waggle_packets(message_data):
+            route_data = pack_waggle_packets([message])
+            route_name = 'to-device-{}'.format(message['receiver_sub_id'])
+            yield route_data, route_name
+
+
+class PluginRouter:
+
+    def generate_message_routes(self, message_data):
+        for message in unpack_waggle_packets(message_data):
+            for datagram in unpack_datagrams(message['body']):
+                plugin_message = message.copy()
+                plugin_message['body'] = pack_datagrams([datagram])
+
+                route_data = pack_waggle_packets([plugin_message])
+
+                route_name = 'to-plugin-{}-{}-{}'.format(
+                    datagram['plugin_id'],
+                    datagram['plugin_major_version'],
+                    datagram['plugin_instance'])
+
+                yield route_data, route_name
 
 
 def setup_logging(args):
@@ -82,7 +65,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
-    parser.add_argument('config', help='Router config. (Prototype right now.)')
+    parser.add_argument('mode', help='Router mode. (beehive,node,plugin)')
     parser.add_argument('queue', help='Message queue to process.')
     args = parser.parse_args()
 
@@ -95,22 +78,18 @@ def main():
     channel.queue_declare(queue=args.queue, durable=True)
 
     if args.config == 'beehive':
-        routing_table = MockRoutingTable(True)
+        router = BeehiveRouter()
     elif args.config == 'node':
-        routing_table = NodeRoutingTable()
-    elif args.config == 'all':
-        routing_table = MockRoutingTable(True)
-    elif args.config == 'none':
-        routing_table = MockRoutingTable(False)
+        router = NodeRouter()
+    elif args.config == 'plugin':
+        router = PluginRouter()
     else:
-        raise ValueError('Unknown config mode.')
-
-    router = Router(routing_table)
+        raise ValueError('Unknown router mode.')
 
     def message_handler(ch, method, properties, body):
         logging.info('Processing message data.')
 
-        for data, queue in router.route_message_data(body):
+        for data, queue in router.generate_message_routes(body):
             ch.queue_declare(queue=queue, durable=True)
             ch.basic_publish(exchange='', routing_key=queue, body=data)
 
