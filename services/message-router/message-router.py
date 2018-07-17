@@ -61,6 +61,13 @@ def setup_logging(args):
         level=loglevel)
 
 
+router_modes = {
+    'beehive': BeehiveRouter,
+    'node': NodeRouter,
+    'plugin': PluginRouter,
+}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true')
@@ -77,14 +84,7 @@ def main():
 
     channel.queue_declare(queue=args.queue, durable=True)
 
-    if args.config == 'beehive':
-        router = BeehiveRouter()
-    elif args.config == 'node':
-        router = NodeRouter()
-    elif args.config == 'plugin':
-        router = PluginRouter()
-    else:
-        raise ValueError('Unknown router mode.')
+    router = router_modes[args.mode]()
 
     def message_handler(ch, method, properties, body):
         logging.info('Processing message data.')
