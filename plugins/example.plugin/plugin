@@ -24,8 +24,8 @@ while True:
     print('Sending communication to node 00000001.')
 
     msg = pack_comm_message({
-        'receiver_id': b'00000001',
-        'receiver_sub_id': b'00000000',
+        'receiver_id': '0000000000000001',
+        'receiver_sub_id': '0000000000000000',
         'body': b'hello! testing a message to another node!',
     })
 
