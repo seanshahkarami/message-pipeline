@@ -90,6 +90,7 @@ def main():
         logging.info('Processing message data.')
 
         for data, queue in router.generate_message_routes(body):
+            logging.info('Routing to queue "%s".', queue)
             ch.queue_declare(queue=queue, durable=True)
             ch.basic_publish(exchange='', routing_key=queue, body=data)
 
