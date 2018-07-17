@@ -42,7 +42,7 @@ class MockRoutingTable:
         raise NotImplementedError('General rules not implemented yet.')
 
     def get_message_route(self, message):
-        return 'to-node-{}'.format(message['receiver_id'].decode())
+        return 'to-node-{}'.format(message['receiver_id'])
 
 
 class SqliteRoutingTable:
@@ -54,7 +54,7 @@ class SqliteRoutingTable:
         return False
 
     def get_message_route(self, message):
-        return 'to-node-{}'.format(message['receiver_id'].decode())
+        return 'to-node-{}'.format(message['receiver_id'])
 
 
 class NodeRoutingTable:
@@ -63,7 +63,7 @@ class NodeRoutingTable:
         return True
 
     def get_message_route(self, message):
-        return 'to-device-{}'.format(message['receiver_sub_id'].decode())
+        return 'to-device-{}'.format(message['receiver_sub_id'])
 
 
 def setup_logging(args):
