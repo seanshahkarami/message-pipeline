@@ -41,9 +41,11 @@ class PluginRouter:
 
                 route_data = pack_waggle_packets([plugin_message])
 
-                route_name = 'to-plugin-{}-{}-{}'.format(
+                route_name = 'to-plugin-{}-{}.{}.{}-{}'.format(
                     datagram['plugin_id'],
                     datagram['plugin_major_version'],
+                    datagram['plugin_minor_version'],
+                    datagram['plugin_build_version'],
                     datagram['plugin_instance'])
 
                 yield route_data, route_name
