@@ -21,4 +21,14 @@ while True:
 
     plugin.publish(msg)
 
+    print('Sending communication to node 00000001.')
+
+    msg = pack_waggle_packets([{
+        'receiver_id': b'00000001',
+        'receiver_sub_id': b'00000000',
+        'body': pack_datagrams([
+            {'body': b'hello! testing a message to another node!'},
+        ]),
+    }])
+
     time.sleep(1)
