@@ -77,7 +77,7 @@ def main():
 
     channel.queue_declare(queue=args.queue, durable=True)
 
-    router = Router(MockRoutingTable())
+    router = Router(MockRoutingTable(True))
 
     def message_handler(ch, method, properties, body):
         print('processing message data', flush=True)
