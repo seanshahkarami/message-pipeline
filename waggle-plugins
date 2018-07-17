@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import random
+import pika
 import subprocess
 import string
 
@@ -124,6 +125,17 @@ def generate_random_password():
     return ''.join(random.choice(password_characters) for _ in range(32))
 
 
+def declare_publishing_pipeline():
+    # not secure, will need to be fixed to use different auth token.
+    parameters = pika.URLParameters('amqp://waggle:waggle@localhost')
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
+
+    channel.exchange_declare(exchange='publish', exchange_type='fanout', durable=True)
+    channel.queue_declare(queue='validate', durable=True)
+    channel.queue_bind(queue='validate', exchange='publish')
+
+
 def enable_plugin(plugin_dir):
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
     username = get_username_for_plugin_config(config)
@@ -132,6 +144,7 @@ def enable_plugin(plugin_dir):
     executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
     add_user(username, password)
     add_service(username, rabbitmq_url, executable)
+    declare_publishing_pipeline()
     print('enabled', username)
 
 
