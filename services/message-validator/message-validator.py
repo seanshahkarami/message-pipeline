@@ -7,8 +7,8 @@ from waggle.protocol.v0 import *
 
 
 # these can become flags...otherwise, will attempt to autodetect
-WAGGLE_NODE_ID = os.environ.get('WAGGLE_NODE_ID', '00000000').encode()
-WAGGLE_DEVICE_ID = os.environ.get('WAGGLE_DEVICE_ID', '00000000').encode()
+WAGGLE_NODE_ID = os.environ.get('WAGGLE_NODE_ID', '0000000000000000')
+WAGGLE_DEVICE_ID = os.environ.get('WAGGLE_DEVICE_ID', '0000000000000000')
 
 
 def parse_version_string(s):
@@ -33,6 +33,10 @@ def parse_plugin_user_id(user_id):
         'version': parse_version_string(version_string),
         'instance': int(instance_string),
     }
+
+
+def stamp_message_headers(user_id, message_data):
+    pass
 
 
 def message_handler(ch, method, properties, body):
