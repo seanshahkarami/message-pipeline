@@ -2,9 +2,9 @@
 import argparse
 from collections import defaultdict
 import pika
+import sqlite3
 from waggle.protocol.v0 import pack_waggle_packets
 from waggle.protocol.v0 import unpack_waggle_packets
-import sqlite3
 
 
 class Router:
