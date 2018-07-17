@@ -127,7 +127,7 @@ def generate_random_password():
 
 def declare_publishing_pipeline():
     # not secure, will need to be fixed to use different auth token.
-    parameters = pika.URLParameters('amqp://waggle:waggle@localhost')
+    parameters = pika.URLParameters('amqp://localhost')
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
