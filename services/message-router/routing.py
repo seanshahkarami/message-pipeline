@@ -1,3 +1,5 @@
+import re
+import subprocess
 import sqlite3
 
 
@@ -27,3 +29,18 @@ class SqliteRoutingTable:
 
     def get_message_route(self, message):
         return 'to-node-{}'.format(message['receiver_id'].decode())
+
+
+class NodeRoutingTable:
+
+    def is_message_routable(self, message):
+        return True
+
+    def get_message_route(self, message):
+        return 'to-device-{}'.format(message['receiver_sub_id'].decode())
+
+
+# def get_node_id():
+#     output = subprocess.check_output(['ip', 'link', 'show', 'eth0']).decode()
+#     match = re.search(r'ether\s+(\S+)', output)
+#     return match.group(1).replace(':', '')
