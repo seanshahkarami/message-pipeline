@@ -85,7 +85,7 @@ def message_handler(ch, method, properties, body):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('url', help='AMQP broker URL to connect to.')
+    parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
     parser.add_argument('inqueue', help='Queue to consume from.')
     parser.add_argument('outqueue', help='Queue to publish to.')
     args = parser.parse_args()
