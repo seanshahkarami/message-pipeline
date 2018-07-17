@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from collections import defaultdict
+import logging
 import pika
 import sqlite3
 from waggle.protocol.v0 import pack_waggle_packets
@@ -17,14 +18,14 @@ class Router:
 
         for message in unpack_waggle_packets(message_data):
             if not self.routing_table.is_message_routable(message):
-                print('dropping', message, flush=True)
+                logging.info('Dropping message %s.', message)
                 continue
 
             route = self.routing_table.get_message_route(message)
             routes[route].append(message)
 
         for route, messages in routes.items():
-            print('routing', messages, route, flush=True)
+            logging.info('Routing message %s.', message)
             yield pack_waggle_packets(messages), route
 
 
@@ -65,12 +66,27 @@ class NodeRoutingTable:
         return 'to-device-{}'.format(message['receiver_sub_id'].decode())
 
 
+def setup_logging(args):
+    if args.debug:
+        loglevel = logging.DEBUG
+    else:
+        loglevel = logging.WARNING
+
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y/%m/%d %H:%M:%S %Z',
+        level=loglevel)
+
+
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', action='store_true')
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
     parser.add_argument('config', help='Router config. (Prototype right now.)')
     parser.add_argument('queue', help='Message queue to process.')
     args = parser.parse_args()
+
+    setup_logging(args)
 
     parameters = pika.URLParameters(args.url)
     connection = pika.BlockingConnection(parameters)
@@ -92,12 +108,13 @@ def main():
     router = Router(routing_table)
 
     def message_handler(ch, method, properties, body):
-        print('Processing message data.', flush=True)
+        logging.info('Processing message data.')
 
         for data, queue in router.route_message_data(body):
             ch.queue_declare(queue=queue, durable=True)
             ch.basic_publish(exchange='', routing_key=queue, body=data)
 
+        logging.info('Acking message data.')
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel.basic_consume(message_handler, args.queue)
