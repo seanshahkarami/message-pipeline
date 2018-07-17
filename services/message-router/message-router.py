@@ -70,7 +70,7 @@ def setup_logging(args):
     if args.debug:
         loglevel = logging.DEBUG
     else:
-        loglevel = logging.WARNING
+        loglevel = logging.INFO
 
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
