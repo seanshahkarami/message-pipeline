@@ -3,7 +3,6 @@ import argparse
 import json
 import os
 import random
-import requests
 import subprocess
 import string
 
@@ -14,7 +13,7 @@ RABBITMQ_URL = 'http://localhost:15672/api'
 SERVICE_TEMPLATE = '''
 #!/bin/sh
 
-export WAGGLE_PLUGIN_CREDENTIALS={credentials}
+export WAGGLE_PLUGIN_RABBITMQ_URL={rabbitmq_url}
 
 {executable}
 '''
@@ -89,9 +88,9 @@ def rabbitmqctl_delete_user(username):
     ])
 
 
-def add_service(name, credentials, executable):
+def add_service(name, rabbitmq_url, executable):
     formatted = SERVICE_TEMPLATE.format(
-        credentials=credentials,
+        rabbitmq_url=rabbitmq_url,
         executable=executable).strip()
 
     os.makedirs(SERVICE_DIR, exist_ok=True)
@@ -129,10 +128,10 @@ def enable_plugin(plugin_dir):
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
     username = get_username_for_plugin_config(config)
     password = generate_random_password()
-    credentials = '{}:{}'.format(username, password)
+    rabbitmq_url = 'amqp://{}:{}@localhost'.format(username, password)
     executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
     add_user(username, password)
-    add_service(username, credentials, executable)
+    add_service(username, rabbitmq_url, executable)
     print('enabled', username)
 
 
