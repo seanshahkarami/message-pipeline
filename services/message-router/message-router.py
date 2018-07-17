@@ -68,6 +68,7 @@ class NodeRoutingTable:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
+    parser.add_argument('config', help='Router config. (Prototype right now.)')
     parser.add_argument('queue', help='Message queue to process.')
     args = parser.parse_args()
 
@@ -77,10 +78,21 @@ def main():
 
     channel.queue_declare(queue=args.queue, durable=True)
 
-    router = Router(MockRoutingTable(True))
+    if args.config == 'beehive':
+        routing_table = MockRoutingTable(True)
+    elif args.config == 'node':
+        routing_table = NodeRoutingTable()
+    elif args.config == 'all':
+        routing_table = MockRoutingTable(True)
+    elif args.config == 'none':
+        routing_table = MockRoutingTable(False)
+    else:
+        raise ValueError('Unknown config mode.')
+
+    router = Router(routing_table)
 
     def message_handler(ch, method, properties, body):
-        print('processing message data', flush=True)
+        print('Processing message data.', flush=True)
 
         for data, queue in router.route_message_data(body):
             ch.queue_declare(queue=queue, durable=True)
