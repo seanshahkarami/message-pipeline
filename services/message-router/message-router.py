@@ -15,21 +15,24 @@ def process_waggle_messages(message_data):
 
     for message in unpack_waggle_packets(message_data):
         if not routing_table.is_message_routable(message):
-            print('dropping', message)
+            print('dropping', message, flush=True)
             continue
 
         route = routing_table.get_message_route(message)
         routes[route].append(message)
 
     for route, messages in routes.items():
-        print(messages, route)
+        print('routing', messages, route, flush=True)
         yield pack_waggle_packets(messages), route
 
 
 def message_handler(ch, method, properties, body):
+    print('processing message data', flush=True)
+
     for data, queue in process_waggle_messages(body):
         ch.queue_declare(queue=queue, durable=True)
         ch.basic_publish(exchange='', routing_key=queue, body=data)
+
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
@@ -39,7 +42,8 @@ def main():
     parser.add_argument('queue', help='Message queue to process.')
     args = parser.parse_args()
 
-    connection = pika.BlockingConnection(pika.URLParameters(args.url))
+    parameters = pika.URLParameters(args.url)
+    connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
     channel.queue_declare(queue=args.queue, durable=True)
