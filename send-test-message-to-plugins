@@ -13,8 +13,8 @@ data = pack_waggle_packets([
     {
         'sender_id': '0000000000000000',
         'sender_sub_id': '0000000000000000',
-        'receiver_id': b'0000000000000001',
-        'receiver_sub_id': b'0000000000000000',
+        'receiver_id': '0000000000000001',
+        'receiver_sub_id': '0000000000000000',
         'body': pack_datagrams([
             {
                 'plugin_id': 37,
