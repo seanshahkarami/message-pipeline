@@ -8,25 +8,24 @@ parameters = pika.URLParameters('amqp://tester:tester@localhost')
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
-
-data = pack_waggle_packets([
-    {
-        'sender_id': '0000000000000000',
-        'sender_sub_id': '0000000000000000',
-        'receiver_id': '0000000000000001',
-        'receiver_sub_id': '0000000000000000',
-        'body': pack_datagrams([
-            {
-                'plugin_id': 37,
-                'plugin_major_version': 0,
-                'plugin_minor_version': 1,
-                'plugin_instance': 1,
-                'body': b'Hello! This is a message from the admin!'
-            }
-        ])
-    },
-])
-
 while True:
+    data = pack_waggle_packets([
+        {
+            'sender_id': '0000000000000000',
+            'sender_sub_id': '0000000000000000',
+            'receiver_id': '0000000000000001',
+            'receiver_sub_id': '0000000000000000',
+            'body': pack_datagrams([
+                {
+                    'plugin_id': 37,
+                    'plugin_major_version': 0,
+                    'plugin_minor_version': 1,
+                    'plugin_instance': 1,
+                    'body': 'Hello! This is a message from the admin! Time is {}.'.format(time.time()).encode()
+                }
+            ])
+        },
+    ])
+
     channel.basic_publish(exchange='messages', routing_key='', body=data)
     time.sleep(5)
