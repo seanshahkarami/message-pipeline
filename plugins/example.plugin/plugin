@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+import pprint
 from waggle.protocol.v0.pipeline import Plugin
 from waggle.protocol.v0 import *
 
@@ -9,7 +10,7 @@ plugin = Plugin()
 while True:
     for msg in plugin.get_waiting_messages():
         print('Got a message!')
-        print(msg)
+        pprint.pprint(msg)
 
     print('Sending sensor data!')
 
