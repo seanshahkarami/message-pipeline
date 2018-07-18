@@ -29,7 +29,7 @@ def parse_plugin_user_id(user_id):
     id_string, version_string, instance_string = match.groups()
 
     return {
-        'id': int(id_string, 16),
+        'id': int(id_string),
         'version': parse_version_string(version_string),
         'instance': int(instance_string),
     }
