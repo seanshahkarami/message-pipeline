@@ -18,7 +18,7 @@ class BeehiveRouter:
                 continue
 
             route_data = pack_waggle_packets([message])
-            route_name = 'to-node-{}'.format(message['receiver_sub_id'])
+            route_name = 'to-node-{}'.format(message['receiver_id'])
             yield route_data, route_name
 
 
@@ -41,9 +41,10 @@ class PluginRouter:
 
                 route_data = pack_waggle_packets([plugin_message])
 
-                route_name = 'to-plugin-{}-{}-{}'.format(
+                route_name = 'to-plugin-{}-{}.{}-{}'.format(
                     datagram['plugin_id'],
                     datagram['plugin_major_version'],
+                    datagram['plugin_minor_version'],
                     datagram['plugin_instance'])
 
                 yield route_data, route_name
