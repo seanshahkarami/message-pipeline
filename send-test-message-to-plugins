@@ -9,7 +9,8 @@ connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
 while True:
-    text = 'Hello! This is a message from the admin! Time is {}.'.format(time.time()).encode()
+    now = time.time()
+    text = 'Hello! This is a message from the admin! Time is {}.'.format(now)
 
     data = pack_message({
         'sender_id': '0000000000000000',
@@ -21,21 +22,9 @@ while True:
             'plugin_major_version': 0,
             'plugin_minor_version': 1,
             'plugin_instance': 1,
-            'body': text,
+            'body': text.encode(),
         })
     })
-
-    data = pack_message(
-        to_id='0000000000000000',
-        to_sub_id='0000000000000000',
-        body=pack_datagram(
-            plugin_id=37,
-            plugin_major_version=0,
-            plugin_minor_version=1,
-            plugin_instance=1,
-            body=b'hello world!'
-        )
-    )
 
     channel.basic_publish(exchange='messages', routing_key='', body=data)
     time.sleep(5)
