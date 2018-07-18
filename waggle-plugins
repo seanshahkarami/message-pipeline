@@ -38,7 +38,7 @@ def add_user(username, password):
     except subprocess.CalledProcessError:
         rabbitmqctl_change_password(username, password)
 
-    queue = 'in-' + username
+    queue = 'to-' + username
 
     rabbitmqctl_set_permissions(
         username,
