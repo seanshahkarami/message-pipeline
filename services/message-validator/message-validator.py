@@ -12,12 +12,12 @@ WAGGLE_DEVICE_ID = os.environ.get('WAGGLE_DEVICE_ID', '0000000000000000')
 
 
 def parse_version_string(s):
-    match = re.match(r'(\d+)\.(\d+)\.(\d+)', s)
+    ver = tuple(int(n) for n in s.split('.'))
 
-    if match is None:
-        return None
+    while len(ver) < 3:
+        ver = ver + (0,)
 
-    return tuple(int(n) for n in match.groups())
+    return ver
 
 
 def parse_plugin_user_id(user_id):
