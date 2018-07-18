@@ -114,7 +114,7 @@ def remove_service(name):
 def get_username_for_plugin_config(config):
     return 'plugin-{}-{}-{}'.format(
         config['plugin_id'],
-        config['plugin_version'],
+        config['plugin_version'].split('.')[0],
         config['plugin_instance'])
 
 

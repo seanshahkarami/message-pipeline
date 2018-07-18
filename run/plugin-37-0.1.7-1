@@ -1,5 +1,0 @@
-#!/bin/sh
-
-export WAGGLE_PLUGIN_CREDENTIALS=plugin-37-0.1.7-1:mu6OtPV87cASU2hMyPpydAazb4lfm8qL
-
-/Users/Sean/github/message-router/plugins/example.plugin/plugin
