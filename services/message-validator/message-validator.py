@@ -55,34 +55,32 @@ def message_handler(ch, method, properties, body):
         print('Dropping message with invalid plugin user ID.', properties, body)
         return
 
-    for packet in unpack_waggle_packets(body):
-        for subpacket in unpack_datagrams(packet['body']):
-            data = pack_waggle_packets([
-                {
-                    'sender_id': WAGGLE_NODE_ID,
-                    'sender_sub_id': WAGGLE_DEVICE_ID,
-                    'receiver_id': packet['receiver_id'],
-                    'receiver_sub_id': packet['receiver_sub_id'],
-                    'body': pack_datagrams([
-                        {
-                            'plugin_id': plugin_info['id'],
-                            'plugin_major_version': plugin_info['version'][0],
-                            'plugin_minor_version': plugin_info['version'][1],
-                            'plugin_instance': plugin_info['instance'],
-                            'body': subpacket['body'],
-                        }
-                    ])
-                }
-            ])
+    packets = unpack_waggle_packets(body)
 
-            ch.basic_publish(
-              exchange='',
-              routing_key='to-beehive',
-              properties=pika.BasicProperties(
-                delivery_mode=2),
-              body=data)
+    for packet in packets:
+        packet['sender_id'] = WAGGLE_NODE_ID
+        packet['sender_sub_id'] = WAGGLE_DEVICE_ID
 
-            print('ok', user_id, data)
+        datagrams = unpack_datagrams(packet['body'])
+
+        for datagram in datagrams:
+            datagram['plugin_id'] = plugin_info['id']
+            datagram['plugin_major_version'] = plugin_info['version'][0]
+            datagram['plugin_minor_version'] = plugin_info['version'][1]
+            datagram['plugin_instance'] = plugin_info['instance']
+
+        packet['body'] = pack_datagrams(datagrams)
+
+    data = pack_waggle_packets(packets)
+
+    ch.basic_publish(
+      exchange='',
+      routing_key='to-beehive',
+      properties=pika.BasicProperties(
+        delivery_mode=2),
+      body=data)
+
+    print('ok', user_id, data)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
