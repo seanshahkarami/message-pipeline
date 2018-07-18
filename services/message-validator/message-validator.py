@@ -15,7 +15,7 @@ def parse_version_string(s):
     ver = tuple(map(int, s.split('.')))
 
     if len(ver) < 2:
-        raise ValueError('Invalid version string').
+        raise ValueError('Invalid version string.')
 
     return ver
 
