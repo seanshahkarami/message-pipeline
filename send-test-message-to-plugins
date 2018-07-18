@@ -4,7 +4,7 @@ import time
 from waggle.protocol.v0 import pack_waggle_packets, pack_datagrams
 
 
-parameters = pika.URLParameters('amqp://admin:admin@localhost')
+parameters = pika.URLParameters('amqp://tester:tester@localhost')
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
