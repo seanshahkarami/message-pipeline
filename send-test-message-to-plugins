@@ -1,30 +1,32 @@
 #!/usr/bin/env python3
 import pika
 import time
-from waggle.protocol.v0 import *
+from waggle.protocol.v0 import pack_waggle_packets, pack_datagrams
 
 
-credentials = pika.PlainCredentials(
-    username='admin',
-    password='admin')
-
-parameters = pika.ConnectionParameters(
-    credentials=credentials,
-    virtual_host='node1')
-
+parameters = pika.URLParameters('amqp://admin:admin@localhost')
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
+
 data = pack_waggle_packets([
     {
-        'sender_id': b'beehive1',
-        'sender_sub_id': b'beehive1',
-        'receiver_id': b'node1234',
-        'receiver_sub_id': b'nc      ',
-        'body': b'greetings!',
+        'sender_id': '0000000000000000',
+        'sender_sub_id': '0000000000000000',
+        'receiver_id': b'0000000000000001',
+        'receiver_sub_id': b'0000000000000000',
+        'body': pack_datagrams([
+            {
+                'plugin_id': 37,
+                'plugin_major_version': 0,
+                'plugin_minor_version': 1,
+                'plugin_instance': 1,
+                'body': b'Hello! This is a message from the admin!'
+            }
+        ])
     },
 ])
 
 while True:
-    channel.basic_publish('', 'in-plugin-37-0.1.7-1', data)
+    channel.basic_publish(exchange='messages', routing_key='', body=data)
     time.sleep(5)
