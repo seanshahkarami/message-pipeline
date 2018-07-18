@@ -12,10 +12,10 @@ WAGGLE_DEVICE_ID = os.environ.get('WAGGLE_DEVICE_ID', '0000000000000000')
 
 
 def parse_version_string(s):
-    ver = tuple(int(n) for n in s.split('.'))
+    ver = tuple(map(int, s.split('.')))
 
-    while len(ver) < 3:
-        ver = ver + (0,)
+    if len(ver) < 2:
+        raise ValueError('Invalid version string').
 
     return ver
 
