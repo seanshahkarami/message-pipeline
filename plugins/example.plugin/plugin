@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
 import time
 import pprint
-import waggle.protocol.v0 as protocol
 from waggle.plugin import Plugin
-
-
-def pack_sensor_data(sensorgrams):
-    return protocol.pack_message({
-        'body': protocol.pack_datagram({
-            'body': protocol.pack_sensorgrams(sensorgrams)
-        })
-    })
+import waggle.protocol.v0 as protocol
 
 
 plugin = Plugin()
@@ -22,11 +14,17 @@ while True:
 
     print('Sending sensor data!')
 
-    msg = pack_sensor_data([
+    readings = [
         {'sensor_id': 1, 'parameter_id': 1, 'value': b'111'},
         {'sensor_id': 2, 'parameter_id': 2, 'value': b'222222'},
         {'sensor_id': 3, 'parameter_id': 100, 'value': b'321'},
-    ])
+    ]
+
+    msg = protocol.pack_message({
+        'body': protocol.pack_datagram({
+            'body': protocol.pack_sensorgrams(readings)
+        })
+    })
 
     plugin.publish(msg)
 
