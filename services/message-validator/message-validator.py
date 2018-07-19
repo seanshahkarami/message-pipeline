@@ -3,7 +3,7 @@ import argparse
 import os
 import pika
 import re
-from waggle.protocol.v0 import *
+import waggle.protocol.v0 as protocol
 
 
 # these can become flags...otherwise, will attempt to autodetect
@@ -55,13 +55,13 @@ def message_handler(ch, method, properties, body):
         print('Dropping message with invalid plugin user ID.', properties, body)
         return
 
-    packets = unpack_waggle_packets(body)
+    packets = protocol.unpack_waggle_packets(body)
 
     for packet in packets:
         packet['sender_id'] = WAGGLE_NODE_ID
         packet['sender_sub_id'] = WAGGLE_DEVICE_ID
 
-        datagrams = unpack_datagrams(packet['body'])
+        datagrams = protocol.unpack_datagrams(packet['body'])
 
         for datagram in datagrams:
             datagram['plugin_id'] = plugin_info['id']
@@ -69,9 +69,9 @@ def message_handler(ch, method, properties, body):
             datagram['plugin_minor_version'] = plugin_info['version'][1]
             datagram['plugin_instance'] = plugin_info['instance']
 
-        packet['body'] = pack_datagrams(datagrams)
+        packet['body'] = protocol.pack_datagrams(datagrams)
 
-    data = pack_waggle_packets(packets)
+    data = protocol.pack_waggle_packets(packets)
 
     ch.basic_publish(
       exchange='',

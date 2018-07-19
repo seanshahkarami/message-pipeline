@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import pika
 import time
-from waggle.protocol.v0 import pack_message, pack_datagram
+import waggle.protocol.v0 as protocol
 
 
 parameters = pika.URLParameters('amqp://tester:tester@localhost')
@@ -12,12 +12,12 @@ while True:
     now = time.time()
     text = 'Hello! This is a message from the admin! Time is {}.'.format(now)
 
-    data = pack_message({
+    data = protocol.pack_message({
         'sender_id': '0000000000000000',
         'sender_sub_id': '0000000000000000',
         'receiver_id': '0000000000000001',
         'receiver_sub_id': '0000000000000000',
-        'body': pack_datagram({
+        'body': protocol.pack_datagram({
             'plugin_id': 37,
             'plugin_major_version': 0,
             'plugin_minor_version': 1,

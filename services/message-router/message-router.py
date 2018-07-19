@@ -2,8 +2,7 @@
 import argparse
 import logging
 import pika
-from waggle.protocol.v0 import pack_waggle_packets, unpack_waggle_packets
-from waggle.protocol.v0 import pack_datagrams, unpack_datagrams
+import waggle.protocol.v0 as protocol
 
 
 class BeehiveRouter:
@@ -12,12 +11,12 @@ class BeehiveRouter:
         return True
 
     def generate_message_routes(self, message_data):
-        for message in unpack_waggle_packets(message_data):
+        for message in protocol.unpack_waggle_packets(message_data):
             if not self.is_message_routable(message):
                 logging.info('Dropping message %s.', message)
                 continue
 
-            route_data = pack_waggle_packets([message])
+            route_data = protocol.pack_waggle_packets([message])
             route_name = 'to-node-{}'.format(message['receiver_id'])
             yield route_data, route_name
 
@@ -25,8 +24,8 @@ class BeehiveRouter:
 class NodeRouter:
 
     def generate_message_routes(self, message_data):
-        for message in unpack_waggle_packets(message_data):
-            route_data = pack_waggle_packets([message])
+        for message in protocol.unpack_waggle_packets(message_data):
+            route_data = protocol.pack_waggle_packets([message])
             route_name = 'to-device-{}'.format(message['receiver_sub_id'])
             yield route_data, route_name
 
@@ -34,12 +33,12 @@ class NodeRouter:
 class PluginRouter:
 
     def generate_message_routes(self, message_data):
-        for message in unpack_waggle_packets(message_data):
-            for datagram in unpack_datagrams(message['body']):
+        for message in protocol.unpack_waggle_packets(message_data):
+            for datagram in protocol.unpack_datagrams(message['body']):
                 plugin_message = message.copy()
-                plugin_message['body'] = pack_datagrams([datagram])
+                plugin_message['body'] = protocol.pack_datagrams([datagram])
 
-                route_data = pack_waggle_packets([plugin_message])
+                route_data = protocol.pack_waggle_packets([plugin_message])
 
                 route_name = 'to-plugin-{}-{}.{}-{}'.format(
                     datagram['plugin_id'],

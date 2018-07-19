@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import argparse
 import pika
-from waggle.protocol.v0 import unpack_waggle_packets
-from waggle.protocol.v0 import unpack_datagrams
+import waggle.protocol.v0 as protocol
 
 
 def message_handler(ch, method, properties, body):
-    for message in unpack_waggle_packets(body):
+    for message in protocol.unpack_waggle_packets(body):
         print('--- message')
         print(message)
-        for datagram in unpack_datagrams(message['body']):
+        for datagram in protocol.unpack_datagrams(message['body']):
             print('--- datagram')
             print(datagram)
     ch.basic_ack(delivery_tag=method.delivery_tag)
