@@ -86,7 +86,8 @@ def main():
           exchange='',
           routing_key=args.outqueue,
           properties=pika.BasicProperties(
-            delivery_mode=2),
+            delivery_mode=2,
+            user_id='node{}'.format(WAGGLE_NODE_ID)),
           body=data)
 
         print('ok', user_id, data)
