@@ -42,7 +42,8 @@ def main():
     parser.add_argument('outqueue', help='Queue to publish to.')
     args = parser.parse_args()
 
-    connection = pika.BlockingConnection(pika.URLParameters(args.url))
+    parameters = pika.URLParameters(args.url)
+    connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
     channel.queue_declare(queue=args.inqueue, durable=True)
@@ -87,7 +88,7 @@ def main():
           routing_key=args.outqueue,
           properties=pika.BasicProperties(
             delivery_mode=2,
-            user_id='node{}'.format(WAGGLE_NODE_ID)),
+            user_id=parameters.credentials.username),
           body=data)
 
         print('ok', user_id, data)
