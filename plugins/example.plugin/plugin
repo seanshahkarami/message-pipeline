@@ -14,10 +14,10 @@ while True:
 
     print('Sending sensor data!')
 
-    msg = protocol.pack_sensor_message([
+    msg = protocol.pack_sensor_data_message([
         {'sensor_id': 1, 'parameter_id': 1, 'value': b'111'},
-        {'sensor_id': 1, 'parameter_id': 2, 'value': b'222222'},
-        {'sensor_id': 232, 'parameter_id': 100, 'value': b'321'},
+        {'sensor_id': 2, 'parameter_id': 2, 'value': b'222222'},
+        {'sensor_id': 3, 'parameter_id': 100, 'value': b'321'},
     ])
 
     plugin.publish(msg)
