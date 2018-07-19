@@ -35,56 +35,6 @@ def parse_plugin_user_id(user_id):
     }
 
 
-def stamp_message_headers(user_id, message_data):
-    pass
-
-
-def message_handler(ch, method, properties, body):
-    print('---')
-    user_id = properties.user_id
-
-    if user_id is None:
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        print('Dropping message with missing user ID.', properties, body)
-        return
-
-    try:
-        plugin_info = parse_plugin_user_id(user_id)
-    except ValueError:
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        print('Dropping message with invalid plugin user ID.', properties, body)
-        return
-
-    packets = protocol.unpack_waggle_packets(body)
-
-    for packet in packets:
-        packet['sender_id'] = WAGGLE_NODE_ID
-        packet['sender_sub_id'] = WAGGLE_DEVICE_ID
-
-        datagrams = protocol.unpack_datagrams(packet['body'])
-
-        for datagram in datagrams:
-            datagram['plugin_id'] = plugin_info['id']
-            datagram['plugin_major_version'] = plugin_info['version'][0]
-            datagram['plugin_minor_version'] = plugin_info['version'][1]
-            datagram['plugin_instance'] = plugin_info['instance']
-
-        packet['body'] = protocol.pack_datagrams(datagrams)
-
-    data = protocol.pack_waggle_packets(packets)
-
-    ch.basic_publish(
-      exchange='',
-      routing_key='to-beehive',
-      properties=pika.BasicProperties(
-        delivery_mode=2),
-      body=data)
-
-    print('ok', user_id, data)
-
-    ch.basic_ack(delivery_tag=method.delivery_tag)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
@@ -97,6 +47,53 @@ def main():
 
     channel.queue_declare(queue=args.inqueue, durable=True)
     channel.queue_declare(queue=args.outqueue, durable=True)
+
+    def message_handler(ch, method, properties, body):
+        print('---')
+        user_id = properties.user_id
+
+        if user_id is None:
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            print('Dropping message with missing user ID.', properties, body)
+            return
+
+        try:
+            plugin_info = parse_plugin_user_id(user_id)
+        except ValueError:
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            print('Dropping message with invalid plugin user ID.', properties, body)
+            return
+
+        packets = protocol.unpack_waggle_packets(body)
+
+        for packet in packets:
+            packet['sender_id'] = WAGGLE_NODE_ID
+            packet['sender_sub_id'] = WAGGLE_DEVICE_ID
+
+            datagrams = protocol.unpack_datagrams(packet['body'])
+
+            for datagram in datagrams:
+                datagram['plugin_id'] = plugin_info['id']
+                datagram['plugin_major_version'] = plugin_info['version'][0]
+                datagram['plugin_minor_version'] = plugin_info['version'][1]
+                datagram['plugin_instance'] = plugin_info['instance']
+
+            packet['body'] = protocol.pack_datagrams(datagrams)
+
+        data = protocol.pack_waggle_packets(packets)
+
+        ch.basic_publish(
+          exchange='',
+          routing_key=args.outqueue,
+          properties=pika.BasicProperties(
+            delivery_mode=2,
+            user_id='node{}'.format(WAGGLE_NODE_ID)),
+          body=data)
+
+        print('ok', user_id, data)
+
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
     channel.basic_consume(message_handler, args.inqueue)
     channel.start_consuming()
 
