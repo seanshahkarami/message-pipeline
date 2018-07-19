@@ -45,6 +45,8 @@ def main():
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
+    node_username = parameters.credentials.username
+
     channel.queue_declare(queue=args.inqueue, durable=True)
     channel.queue_declare(queue=args.outqueue, durable=True)
 
@@ -67,7 +69,7 @@ def main():
         packets = protocol.unpack_waggle_packets(body)
 
         for packet in packets:
-            packet['sender_id'] = get_receiver_id_from_username(parameters.credentials.username)
+            packet['sender_id'] = get_receiver_id_from_username(node_username)
             packet['sender_sub_id'] = '0000000000000000'
 
             datagrams = protocol.unpack_datagrams(packet['body'])
@@ -87,7 +89,7 @@ def main():
           routing_key=args.outqueue,
           properties=pika.BasicProperties(
             delivery_mode=2,
-            user_id=parameters.credentials.username),
+            user_id=node_username),
           body=data)
 
         print('ok', user_id, data)
