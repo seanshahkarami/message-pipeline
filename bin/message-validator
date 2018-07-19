@@ -6,11 +6,6 @@ import re
 import waggle.protocol.v0 as protocol
 
 
-# these can become flags...otherwise, will attempt to autodetect
-WAGGLE_NODE_ID = os.environ.get('WAGGLE_NODE_ID', '0000000000000000')
-WAGGLE_DEVICE_ID = os.environ.get('WAGGLE_DEVICE_ID', '0000000000000000')
-
-
 def parse_version_string(s):
     ver = tuple(map(int, s.split('.')))
 
@@ -18,6 +13,10 @@ def parse_version_string(s):
         raise ValueError('Invalid version string.')
 
     return ver
+
+
+def get_receiver_id_from_username(username):
+    return username.replace('node', '').rjust(16, '0')
 
 
 def parse_plugin_user_id(user_id):
@@ -68,8 +67,8 @@ def main():
         packets = protocol.unpack_waggle_packets(body)
 
         for packet in packets:
-            packet['sender_id'] = WAGGLE_NODE_ID
-            packet['sender_sub_id'] = WAGGLE_DEVICE_ID
+            packet['sender_id'] = get_receiver_id_from_username(parameters.credentials.username)
+            packet['sender_sub_id'] = '0000000000000000'
 
             datagrams = protocol.unpack_datagrams(packet['body'])
 
