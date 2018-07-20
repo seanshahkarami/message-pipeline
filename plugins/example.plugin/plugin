@@ -19,7 +19,7 @@ while True:
         {'sensor_id': 2, 'parameter_id': 0, 'value': b'321'},
     ])
 
-    print('Sending message:', msg)
     plugin.publish(msg)
+    print('Sent message:', msg)
 
     time.sleep(1)
