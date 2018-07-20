@@ -18,7 +18,8 @@ while True:
     # > {'sensor_id': 'htu21d', 'parameter_id': 'temperature': 'value': 23.1}
     # > {'sensor_id': 'htu21d', 'parameter_id': 'humidity': 'value': 80.7}
 
-    # pack "synthetic" readings into message.
+    # pack "synthetic" readings into message. note: defaults assume sensor data
+    # to beehive data loader right now.
     msg = protocol.pack_message({
         'body': protocol.pack_datagram({
             'body': protocol.pack_sensorgrams(readings)
