@@ -7,7 +7,6 @@ import waggle.protocol.v0 as protocol
 plugin = Plugin()
 
 while True:
-    # process incoming messages
     for msg in plugin.get_waiting_messages():
         print('Got message:', msg)
 
