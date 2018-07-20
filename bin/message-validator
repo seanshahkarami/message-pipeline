@@ -6,6 +6,10 @@ import re
 import waggle.protocol.v0 as protocol
 
 
+WAGGLE_NODE_ID = os.environ.get('WAGGLE_NODE_ID', '0000000000000001')
+WAGGLE_DEVICE_ID = os.environ.get('WAGGLE_DEVICE_ID', '0000000000000000')
+
+
 def parse_version_string(s):
     ver = tuple(map(int, s.split('.')))
 
@@ -45,8 +49,6 @@ def main():
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
-    node_username = parameters.credentials.username
-
     channel.queue_declare(queue=args.inqueue, durable=True)
     channel.queue_declare(queue=args.outqueue, durable=True)
 
@@ -70,8 +72,8 @@ def main():
 
         for packet in packets:
             # needs to reflect actual device
-            packet['sender_id'] = os.environ.get('WAGGLE_NODE_ID', '0000000000000001')
-            packet['sender_sub_id'] = os.environ.get('WAGGLE_DEVICE_ID', '0000000000000000')
+            packet['sender_id'] = WAGGLE_NODE_ID
+            packet['sender_sub_id'] = WAGGLE_DEVICE_ID
 
             datagrams = protocol.unpack_datagrams(packet['body'])
 
