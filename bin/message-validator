@@ -69,8 +69,9 @@ def main():
         packets = protocol.unpack_waggle_packets(body)
 
         for packet in packets:
-            packet['sender_id'] = get_receiver_id_from_username(node_username)
-            packet['sender_sub_id'] = '0000000000000000'
+            # needs to reflect actual device
+            packet['sender_id'] = os.environ.get('WAGGLE_NODE_ID', '0000000000000001')
+            packet['sender_sub_id'] = os.environ.get('WAGGLE_DEVICE_ID', '0000000000000000')
 
             datagrams = protocol.unpack_datagrams(packet['body'])
 
@@ -88,8 +89,7 @@ def main():
           exchange='',
           routing_key=args.outqueue,
           properties=pika.BasicProperties(
-            delivery_mode=2,
-            user_id=node_username),
+            delivery_mode=2),
           body=data)
 
         print('ok', user_id, data)
