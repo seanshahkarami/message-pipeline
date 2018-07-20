@@ -8,11 +8,11 @@ plugin = Plugin()
 
 while True:
     # make up some synthetic readings
-    readings = protocol.pack_sensor_data_message([
+    readings = [
         {'sensor_id': 1, 'parameter_id': 1, 'value': b'111'},
         {'sensor_id': 2, 'parameter_id': 2, 'value': b'222222'},
         {'sensor_id': 3, 'parameter_id': 100, 'value': b'321'},
-    ])
+    ]
 
     # pack "synthetic" readings into message. this pattern may be so common,
     # we may just want a util function which does this for us.
