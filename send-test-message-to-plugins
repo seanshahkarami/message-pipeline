@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
+import argparse
 import pika
 import time
 import waggle.protocol.v0 as protocol
 
+parser = argparse.ArgumentParser()
+parser.add_argument('url')
+parser.add_argument('node_id')
+parser.add_argument('device_id')
+args = parser.parse_args()
 
-parameters = pika.URLParameters('amqp://tester:tester@localhost')
+parameters = pika.URLParameters(args.url)
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
@@ -15,8 +21,8 @@ while True:
     data = protocol.pack_message({
         'sender_id': '0000000000000000',
         'sender_sub_id': '0000000000000000',
-        'receiver_id': '0000000000000001',
-        'receiver_sub_id': '0000000000000000',
+        'receiver_id': args.node_id,
+        'receiver_sub_id': args.device_id,
         'body': protocol.pack_datagram({
             'plugin_id': 37,
             'plugin_major_version': 0,
@@ -26,5 +32,5 @@ while True:
         })
     })
 
-    channel.basic_publish(exchange='messages', routing_key='', body=data)
+    channel.basic_publish(exchange='', routing_key='messages', body=data)
     time.sleep(5)
