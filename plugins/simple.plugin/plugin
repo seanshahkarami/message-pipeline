@@ -14,7 +14,7 @@ while True:
         {'sensor_id': 3, 'parameter_id': 100, 'value': b'321'},
     ]
 
-    # once SDF in places, will *also* be able to do:
+    # once SDF in places, could *also* be able to do:
     # > {'sensor_id': 'tmp112', 'parameter_id': 'temperature': 'value': 23.1}
     # > {'sensor_id': 'tmp112', 'parameter_id': 'humidity': 'value': 80.7}
 
