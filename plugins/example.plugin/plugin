@@ -11,7 +11,7 @@ while True:
 
     # process incoming messages
     for msg in plugin.get_waiting_messages():
-        print('Got a message:', msg)
+        print('Got message:', msg)
 
     msg = protocol.pack_sensor_data_message([
         {'sensor_id': 1, 'parameter_id': 0, 'value': b'111'},
@@ -19,7 +19,7 @@ while True:
         {'sensor_id': 2, 'parameter_id': 0, 'value': b'321'},
     ])
 
-    print('Sending sensor data:', msg)
+    print('Sending message:', msg)
     plugin.publish(msg)
 
     time.sleep(1)
