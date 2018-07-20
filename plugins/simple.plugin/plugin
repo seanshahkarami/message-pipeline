@@ -14,13 +14,16 @@ while True:
         {'sensor_id': 3, 'parameter_id': 100, 'value': b'321'},
     ]
 
-    # pack "synthetic" readings into message. this pattern may be so common,
-    # we may just want a util function which does this for us.
+    # pack "synthetic" readings into message.
     msg = protocol.pack_message({
         'body': protocol.pack_datagram({
             'body': protocol.pack_sensorgrams(readings)
         })
     })
+
+    # note: this pattern may be so common, we may just want a util function
+    # which does this for us:
+    # msg = protocol.pack_sensor_data_message(readings)
 
     # send this message out for publishing
     plugin.publish(msg)
