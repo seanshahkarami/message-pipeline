@@ -15,8 +15,8 @@ while True:
     ]
 
     # once SDF in places, will *also* be able to do:
-    # {'sensor_id': 'tmp112', 'parameter_id': 'temperature': 'value': 23.1}
-    # {'sensor_id': 'tmp112', 'parameter_id': 'humidity': 'value': 80.7}
+    # > {'sensor_id': 'tmp112', 'parameter_id': 'temperature': 'value': 23.1}
+    # > {'sensor_id': 'tmp112', 'parameter_id': 'humidity': 'value': 80.7}
 
     # pack "synthetic" readings into message.
     msg = protocol.pack_message({
