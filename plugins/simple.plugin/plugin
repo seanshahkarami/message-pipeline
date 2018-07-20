@@ -23,8 +23,8 @@ while True:
 
     # note: this pattern may be so common, we may just want a util function
     # which does this for us:
-    # msg = protocol.pack_sensor_data_message([...readings...])
-    # msg = protocol.pack_sensor_data_message(prepacked bin data)
+    # > msg = protocol.pack_sensor_data_message(readings)
+    # > msg = protocol.pack_sensor_data_message(prepacked bin data)
 
     # send this message out for publishing
     plugin.publish(msg)
