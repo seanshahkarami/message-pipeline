@@ -8,10 +8,12 @@ import waggle.protocol.v0 as protocol
 plugin = Plugin()
 
 while True:
+    # process incoming messages
     for msg in plugin.get_waiting_messages():
         print('Got a message!')
         pprint.pprint(msg)
 
+    # send our own sensor data
     print('Sending sensor data!')
 
     msg = protocol.pack_sensor_data_message([
