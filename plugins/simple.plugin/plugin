@@ -1,38 +1,29 @@
 #!/usr/bin/env python3
-import time
 from waggle.plugin import Plugin
-import waggle.protocol.v0 as protocol
+import time
 
 
 plugin = Plugin()
 
 while True:
-    # make up some synthetic readings
-    readings = [
-        {'sensor_id': 1, 'parameter_id': 1, 'value': b'111'},
-        {'sensor_id': 2, 'parameter_id': 2, 'value': b'222222'},
-        {'sensor_id': 3, 'parameter_id': 100, 'value': b'321'},
-    ]
-
-    # once SDF in places, could *also* be able to do:
-    # > {'sensor_id': 'htu21d', 'parameter_id': 'temperature': 'value': 23.1}
-    # > {'sensor_id': 'htu21d', 'parameter_id': 'humidity': 'value': 80.7}
-
-    # pack "synthetic" readings into message. note: defaults assume sensor data
-    # to beehive data loader right now + current timestamp. validator sets the
-    # rests of fields to correct sender + plugin.
-    msg = protocol.pack_message({
-        'body': protocol.pack_datagram({
-            'body': protocol.pack_sensorgrams(readings)
-        })
+    plugin.add_measurement({
+        'sensor_id': 1,
+        'parameter_id': 1,
+        'value': b'11',
     })
 
-    # note: this pattern may be so common, we may just want a util function
-    # which does this for us:
-    # > msg = protocol.pack_sensor_data_message(readings)
-    # > msg = protocol.pack_sensor_data_message(prepacked_sensorgram_bytes)
+    plugin.add_measurement({
+        'sensor_id': 1,
+        'parameter_id': 2,
+        'value': b'2222',
+    })
 
-    # send this message out for publishing
-    plugin.publish(msg)
+    plugin.add_measurement({
+        'sensor_id': 2,
+        'parameter_id': 1,
+        'value': b'333333',
+    })
+
+    plugin.publish_measurements()
 
     time.sleep(1)
