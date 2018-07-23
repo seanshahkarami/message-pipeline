@@ -70,15 +70,25 @@ def rabbitmqctl_change_password(username, password):
 
 
 def rabbitmqctl_set_permissions(username, configure, read, write):
-    # support for -v argument?
-    return subprocess.check_output([
-        'rabbitmqctl',
-        'set_permissions',
-        username,
-        configure,
-        write,
-        read,
-    ])
+    if virtual_host is None:
+        return subprocess.check_output([
+            'rabbitmqctl',
+            'set_permissions',
+            username,
+            configure,
+            write,
+            read,
+        ])
+    else:
+        return subprocess.check_output([
+            'rabbitmqctl',
+            'set_permissions',
+            '-p', virtual_host,
+            username,
+            configure,
+            write,
+            read,
+        ])
 
 
 def rabbitmqctl_delete_user(username):
@@ -129,8 +139,11 @@ def generate_random_password():
 
 
 def declare_publishing_pipeline():
-    # not secure, will need to be fixed to use different auth token.
-    parameters = pika.URLParameters('amqp://localhost')
+    if virtual_host is None:
+        parameters = pika.URLParameters('amqp://localhost')
+    else:
+        parameters = pika.URLParameters('amqp://localhost/{}'.format(virtual_host))
+
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
@@ -143,7 +156,12 @@ def enable_plugin(plugin_dir):
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
     username = get_username_for_plugin_config(config)
     password = generate_random_password()
-    rabbitmq_url = 'amqp://{}:{}@localhost'.format(username, password)
+
+    if virtual_host is None:
+        rabbitmq_url = 'amqp://{}:{}@localhost'.format(username, password)
+    else:
+        rabbitmq_url = 'amqp://{}:{}@localhost/{}'.format(username, password, virtual_host)
+
     executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
     add_user(username, password)
     add_service(username, rabbitmq_url, executable)
@@ -160,9 +178,11 @@ def disable_plugin(plugin_dir):
 
 
 def main():
+    global virtual_host
+
     parser = argparse.ArgumentParser()
 
-    parser.add_parser('--vhost', default='/')
+    parser.add_argument('--vhost')
 
     subparsers = parser.add_subparsers(dest='subcommand')
 
@@ -173,6 +193,8 @@ def main():
     parser_disable.add_argument('plugin_dirs', nargs='+')
 
     args = parser.parse_args()
+
+    virtual_host = args.vhost
 
     if args.subcommand == 'enable':
         for plugin in args.plugin_dirs:

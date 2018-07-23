@@ -9,20 +9,24 @@ while True:
     plugin.add_measurement({
         'sensor_id': 1,
         'parameter_id': 1,
-        'value': b'11',
+        'value': b'some data',
     })
 
     plugin.add_measurement({
         'sensor_id': 1,
         'parameter_id': 2,
-        'value': b'2222',
+        'value': b'some more data',
     })
 
     plugin.add_measurement({
         'sensor_id': 2,
         'parameter_id': 1,
-        'value': b'333333',
+        'value': b'even more data',
     })
+
+    # also supports prepacked sensorgram data bytes
+    prepacked_data = pull_particle_sensorgrams()
+    plugin.add_measurement(prepacked_data)
 
     plugin.publish_measurements()
 

@@ -1,15 +1,18 @@
 #!/bin/sh
 
-rabbitmqctl set_parameter shovel shovel-messages-to-beehive '{
-"src-uri": "amqp://localhost",
-"src-queue": "to-beehive",
-"dest-uri": "amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer",
-"dest-exchange": "messages"
-}'
+node_url="amqp://localhost"
+beehive_url="amqps://cookie:23181?auth_mechanism=external&cacertfile=/Users/Sean/github/message-pipeline/ssl/cacert.pem&certfile=/Users/Sean/github/message-pipeline/ssl/cert.pem&keyfile=/Users/Sean/github/message-pipeline/ssl/key.pem&verify=verify_peer"
 
-rabbitmqctl set_parameter shovel shovel-messages-from-beehive '{
-"dest-uri": "amqp://localhost",
-"dest-queue": "messages",
-"src-uri": "amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer",
-"src-queue": "to-node-0000000000000001"
-}'
+rabbitmqctl set_parameter shovel shovel-messages-to-beehive "{
+\"src-uri\": \"${node_url}\",
+\"src-queue\": \"to-beehive\",
+\"dest-uri\": \"${beehive_url}\",
+\"dest-exchange\": \"messages\"
+}"
+
+# rabbitmqctl set_parameter shovel shovel-messages-from-beehive "{
+# \"dest-uri\": \"${node_url}\",
+# \"dest-queue\": \"messages\",
+# \"src-uri\": \"${beehive_url}\",
+# \"src-queue\": \"to-node-0000000000000001\"
+# }"
