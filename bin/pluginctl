@@ -153,6 +153,8 @@ def declare_publishing_pipeline():
 
 
 def enable_plugin(plugin_dir):
+    declare_publishing_pipeline()
+
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
     username = get_username_for_plugin_config(config)
     password = generate_random_password()
@@ -165,7 +167,6 @@ def enable_plugin(plugin_dir):
     executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
     add_user(username, password)
     add_service(username, rabbitmq_url, executable)
-    declare_publishing_pipeline()
     print('enabled', username)
 
 
