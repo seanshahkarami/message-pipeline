@@ -5,8 +5,12 @@ rabbitmq-plugins enable rabbitmq_management rabbitmq_shovel rabbitmq_shovel_mana
 rabbitmqctl add_vhost beehive
 rabbitmqctl add_vhost node
 
+rabbitmqctl add_user guest guest
 rabbitmqctl set_permissions -p beehive guest ".*" ".*" ".*"
 rabbitmqctl set_permissions -p node guest ".*" ".*" ".*"
+
+rabbitmqctl add_user node000000000001 testing
+rabbitmqctl set_permissions -p beehive node000000000001 "^to-node-0000000000000001$" "^messages$" "^to-node-0000000000000001$"
 
 rabbitmqctl set_parameter -p node shovel shovel-messages-to-beehive '{
 "src-uri": "amqp://localhost/node",
