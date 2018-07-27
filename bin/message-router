@@ -88,9 +88,9 @@ def main():
 
         user_id = properties.user_id
 
-        if isinstance(user_id, str):
+        try:
             node_id = user_id.replace('node-', '')
-        else:
+        except Exception:
             node_id = None
 
         for data, queue in router.generate_message_routes(body, node_id):
