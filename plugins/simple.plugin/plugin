@@ -9,19 +9,19 @@ while True:
     plugin.add_measurement({
         'sensor_id': 1,
         'parameter_id': 1,
-        'value': b'some data',
+        'value': 21.3,
     })
 
     plugin.add_measurement({
         'sensor_id': 1,
         'parameter_id': 2,
-        'value': b'some more data',
+        'value': 1032,
     })
 
     plugin.add_measurement({
         'sensor_id': 2,
         'parameter_id': 1,
-        'value': b'even more data',
+        'value': 192.1,
     })
 
     plugin.publish_measurements()
