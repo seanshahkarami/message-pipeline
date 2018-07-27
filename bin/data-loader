@@ -7,11 +7,16 @@ import waggle.protocol.v0 as protocol
 def message_handler(ch, method, properties, body):
     for message in protocol.unpack_waggle_packets(body):
         for datagram in protocol.unpack_datagrams(message['body']):
+            plugin_version = '.'.join([
+                datagram['plugin_major_version'],
+                datagram['plugin_minor_version'],
+                datagram['plugin_build_version'],
+            ])
+
             print('---')
             print('sender-id:', message['sender_id'])
             print('sender-sub-id:', message['sender_sub_id'])
-            print('plugin-id:', datagram['plugin_id'])
-            print('plugin-version:', datagram['plugin_major_version'], datagram['plugin_minor_version'])
+            print('plugin:', datagram['plugin_id'], plugin_version, datagram['plugin_instance'])
             print('sensorgrams:')
 
             for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
