@@ -17,8 +17,6 @@ def message_handler(ch, method, properties, body):
             for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
                 print(sensorgram)
 
-            print()
-
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
