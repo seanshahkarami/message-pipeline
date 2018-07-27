@@ -7,12 +7,14 @@ import waggle.protocol.v0 as protocol
 
 class BeehiveRouter:
 
-    def is_message_routable(self, message):
-        return True
+    def generate_message_routes(self, message_data, user_id):
+        if isinstance(user_id, str):
+            node_id = user_id.replace('node-', '')
+        else:
+            node_id = None
 
-    def generate_message_routes(self, message_data):
         for message in protocol.unpack_waggle_packets(message_data):
-            if not self.is_message_routable(message):
+            if message['sender_id'] != node_id:
                 logging.info('Dropping message %s.', message)
                 continue
 
@@ -23,7 +25,7 @@ class BeehiveRouter:
 
 class NodeRouter:
 
-    def generate_message_routes(self, message_data):
+    def generate_message_routes(self, message_data, user_id):
         for message in protocol.unpack_waggle_packets(message_data):
             route_data = protocol.pack_waggle_packets([message])
             route_name = 'to-sub-{}'.format(message['receiver_sub_id'])
@@ -32,7 +34,7 @@ class NodeRouter:
 
 class PluginRouter:
 
-    def generate_message_routes(self, message_data):
+    def generate_message_routes(self, message_data, user_id):
         for message in protocol.unpack_waggle_packets(message_data):
             for datagram in protocol.unpack_datagrams(message['body']):
                 plugin_message = message.copy()
@@ -89,7 +91,7 @@ def main():
     def message_handler(ch, method, properties, body):
         logging.info('Processing message data.')
 
-        for data, queue in router.generate_message_routes(body):
+        for data, queue in router.generate_message_routes(body, properties.user_id):
             logging.info('Routing to queue "%s".', queue)
             ch.queue_declare(queue=queue, durable=True)
             ch.basic_publish(exchange='', routing_key=queue, body=data)
