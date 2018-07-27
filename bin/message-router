@@ -91,7 +91,7 @@ def main():
     def message_handler(ch, method, properties, body):
         logging.info('Processing message data.')
 
-        print(properties)
+        print(properties.user_id)
 
         for data, queue in router.generate_message_routes(body, properties.user_id):
             logging.info('Routing to queue "%s".', queue)
