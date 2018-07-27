@@ -15,7 +15,7 @@ class BeehiveRouter:
 
         for message in protocol.unpack_waggle_packets(message_data):
             if message['sender_id'] != node_id:
-                logging.info('Dropping message because sender_id (%s) != user_id (%s)', message['sender_id'], node_id)
+                logging.info('Dropping message because sender_id "%s" != user_id "%s".', message['sender_id'], node_id)
                 continue
 
             route_data = protocol.pack_waggle_packets([message])
