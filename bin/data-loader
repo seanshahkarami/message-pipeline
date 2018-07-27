@@ -6,11 +6,17 @@ import waggle.protocol.v0 as protocol
 
 def message_handler(ch, method, properties, body):
     for message in protocol.unpack_waggle_packets(body):
-        print('--- message')
+        print('message:')
         print(message)
+
         for datagram in protocol.unpack_datagrams(message['body']):
-            print('--- datagram')
+            print('datagram:')
             print(datagram)
+
+            print('sensorgrams:')
+
+            for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
+                print(sensorgram)
 
     print()
     ch.basic_ack(delivery_tag=method.delivery_tag)
