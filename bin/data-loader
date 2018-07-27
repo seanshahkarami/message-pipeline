@@ -15,7 +15,9 @@ def message_handler(ch, method, properties, body):
             print('---')
             print('sender-id:', message['sender_id'])
             print('sender-sub-id:', message['sender_sub_id'])
-            print('plugin:', datagram['plugin_id'], plugin_version, datagram['plugin_instance'])
+            print('plugin-id:', datagram['plugin_id'])
+            print('plugin-ver:', plugin_version)
+            print('plugin-inst:', datagram['plugin_instance'])
             print('sensorgrams:')
 
             for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
