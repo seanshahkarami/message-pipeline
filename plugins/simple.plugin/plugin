@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from waggle.plugin import Plugin
+import waggle.plugin
 import time
 
 
-plugin = Plugin()
+plugin = waggle.plugin.PrintPlugin()
 
 while True:
     plugin.add_measurement({
@@ -23,10 +23,6 @@ while True:
         'parameter_id': 1,
         'value': b'even more data',
     })
-
-    # also supports prepacked sensorgram data bytes
-    prepacked_data = pull_particle_sensorgrams()
-    plugin.add_measurement(prepacked_data)
 
     plugin.publish_measurements()
 
