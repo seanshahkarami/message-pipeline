@@ -26,7 +26,7 @@ class NodeRouter:
     def generate_message_routes(self, message_data):
         for message in protocol.unpack_waggle_packets(message_data):
             route_data = protocol.pack_waggle_packets([message])
-            route_name = 'to-sub{}'.format(message['receiver_sub_id'])
+            route_name = 'to-sub-{}'.format(message['receiver_sub_id'])
             yield route_data, route_name
 
 
