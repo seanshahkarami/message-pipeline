@@ -17,7 +17,7 @@ class BeehiveRouter:
                 continue
 
             route_data = protocol.pack_waggle_packets([message])
-            route_name = 'to-node{}'.format(message['receiver_id'])
+            route_name = 'to-node-{}'.format(message['receiver_id'])
             yield route_data, route_name
 
 

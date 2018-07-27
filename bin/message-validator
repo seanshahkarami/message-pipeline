@@ -19,10 +19,6 @@ def parse_version_string(s):
     return ver
 
 
-def get_receiver_id_from_username(username):
-    return username.replace('node', '').rjust(16, '0')
-
-
 def parse_plugin_user_id(user_id):
     match = re.match('plugin-([^-]+)-([^-]+)-([^-]+)', user_id)
 
