@@ -10,4 +10,4 @@ tmux split-window -v 'run/plugin-0-0.0-0'
 tmux split-window -v 'run/plugin-1-0.0-0'
 tmux select-layout even-vertical
 
-tmux -2 attach-session -t testnode
+tmux attach-session -t testnode
