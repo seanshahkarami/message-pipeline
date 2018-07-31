@@ -1,0 +1,13 @@
+#!/bin/sh
+
+tmux new-session -d -s testnode 'bin/message-validator --node-id 0000001e061134fa --sub-id 0000000000000000 validate to-beehive'
+tmux split-window -v 'bin/message-router node messages'
+tmux split-window -v 'bin/message-router plugin to-sub-0000000000000000'
+tmux select-layout even-vertical
+
+tmux new-window 'run/plugin-37-0.1-1'
+tmux split-window -v 'run/plugin-0-0.0-0'
+tmux split-window -v 'run/plugin-1-0.0-0'
+tmux select-layout even-vertical
+
+tmux -2 attach-session -t testnode
