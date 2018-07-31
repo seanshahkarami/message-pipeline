@@ -1,8 +1,9 @@
 #!/bin/sh
 
-tmux new-session -d -s testnode 'bin/beehive-message-router --url amqp://router:router@localhost messages'
+tmux new-session -d -s beehive './send-test-message-to-plugins amqp://router:router@localhost 0000001e061134fa 0000000000000000'
+
+tmux new-window 'bin/beehive-message-router --url amqp://router:router@localhost messages'
 tmux split-window -v 'bin/data-loader --url amqp://router:router@localhost 0000000000000000'
-tmux split-window -v './send-test-message-to-plugins amqp://router:router@localhost 0000001e061134fa 0000000000000000'
 tmux select-layout even-vertical
 
-tmux attach-session -t testnode
+tmux attach-session -t beehive
