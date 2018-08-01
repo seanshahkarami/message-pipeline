@@ -1,6 +1,9 @@
 #!/bin/sh
 
-tmux new-session -d -s node 'bin/message-validator --node-id 0000001e061134fa --sub-id 0000000000000000 validate to-beehive'
+export WAGGLE_NODE_ID=$(openssl x509 -in /usr/lib/waggle/SSL/node/cert.pem -noout -subject | sed 's/^.*node-\(.*\)\/.*$/\1/')
+export WAGGLE_SUB_ID=0000000000000000
+
+tmux new-session -d -s node bin/message-validator validate to-beehive'
 tmux split-window -v 'bin/message-router node messages'
 tmux split-window -v 'bin/message-router plugin to-sub-0000000000000000'
 tmux select-layout even-vertical
