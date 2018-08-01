@@ -32,5 +32,10 @@ while True:
         })
     })
 
-    channel.basic_publish(exchange='', routing_key='messages', body=data)
+    properties = pika.BasicProperties(
+        delivery_mode=2,
+        user_id='node-0000000000000000',
+    )
+
+    channel.basic_publish(exchange='', routing_key='messages', body=data, properties=properties)
     time.sleep(5)
