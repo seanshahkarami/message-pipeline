@@ -7,20 +7,14 @@ import waggle.protocol.v0 as protocol
 def message_handler(ch, method, properties, body):
     for message in protocol.unpack_waggle_packets(body):
         for datagram in protocol.unpack_datagrams(message['body']):
-            plugin_version = '{}.{}'.format(
-                datagram['plugin_major_version'],
-                datagram['plugin_minor_version'],
-            )
-
-            print('---')
-            print('sender-id:', message['sender_id'])
-            print('sender-sub-id:', message['sender_sub_id'])
-            print('plugin-id:', datagram['plugin_id'])
-            print('plugin-ver:', plugin_version)
-            print('plugin-inst:', datagram['plugin_instance'])
-            print('sensorgrams:')
-
             for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
+                # annotate sensorgram with message and datagram info
+                sensorgram['sender_id'] = message['sender_id']
+                sensorgram['sender_sub_id'] = message['sender_sub_id']
+                sensorgram['plugin_id'] = datagram['plugin_id']
+                sensorgram['plugin_major_version'] = datagram['plugin_major_version']
+                sensorgram['plugin_minor_version'] = datagram['plugin_minor_version']
+                sensorgram['plugin_instance'] = datagram['plugin_instance']
                 print(sensorgram)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
