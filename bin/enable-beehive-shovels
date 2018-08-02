@@ -1,76 +1,62 @@
 #!/usr/bin/env python3
+import json
+import re
 import subprocess
 
-output = subprocess.check_output([
-    'openssl',
-    'x509',
-    '-subject',
-    '-in', '/usr/lib/waggle/SSL/node/cert.pem',
-    '-noout'
-])
 
-# rabbitmqctl set_parameter shovel 'push-to-beehive' '{
-#   "src-uri": "amqp://",
-#   "src-queue": "from",
-#   "dest-uri": "amqp://localhost",
-#   "dest-queue": "to",
-#   "publish-properties": {
-#     "app_id": "testing",
-#   }
-# }'
+def get_certfile_subject(filename):
+    output = subprocess.check_output([
+        'openssl',
+        'x509',
+        '-noout',
+        '-subject',
+        '-in', filename,
+    ])
 
-# should do this dynamically...
+    return dict(re.findall('/([^=]+)=([^/]+)', output.decode().strip()))
 
-# rabbitmqctl set_parameter shovel 'push-to-beehive' '{
-#   "src-uri": "amqp://localhost",
-#   "src-queue": "to-beehive",
-#   "dest-uri": "amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer",
-#   "dest-exchange": "messages",
-#   "publish-properties": {
-#     "delivery_mode": 2,
-#     "user_id": "node-0000001e061134fa"
-#   }
-# }'
-#
-#
-#     {push_to_beehive, [
-#       {sources, [
-#         {brokers, ["amqp://"]},
-#         {declarations, []}
-#       ]},
-#       {queue, <<"to-beehive">>},
-#       {destinations, [
-#         {broker, "amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer"},
-#         {declarations, []}
-#       ]},
-#       {publish_fields, [
-#         {exchange, <<"messages">>}
-#       ]},
-#       {publish_properties, [
-#         {delivery_mode, 2},
-#         {user_id, <<"node-0000001e061134fa">>}
-#       ]}
-#     ]},
-#     {pull_from_beehive, [
-#       {sources, [
-#         {brokers, ["amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer"]},
-#         {declarations, []}
-#       ]},
-#       {queue, <<"to-node-0000001e061134fa">>},
-#       {destinations, [
-#         {broker, "amqp://"},
-#         {declarations, []}
-#       ]},
-#       {publish_fields, [
-#         {exchange, <<"messages">>}
-#       ]},
-#       {publish_properties, [
-#         {delivery_mode, 2}
-#       ]}
-#     ]}
-#   ]},
-#   {defaults, [
-#     {prefetch_count, 0},
-#     {ack_mode, on_confirm},
-#     {reconnect_delay, 60}
-#   ]}
+
+def main():
+    subject = get_certfile_subject('/usr/lib/waggle/SSL/node/cert.pem')
+    username = subject['CN']
+
+    shovel_config = {
+        'src-uri': 'amqp://',
+        'src-queue': 'to-beehive',
+        'dest-uri': 'amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer',
+        'dest-exchange': 'messages',
+        'publish-properties': {
+            'delivery_mode': 2,
+            'user_id': username,
+        }
+    }
+
+    subprocess.check_output([
+        'rabbitmqctl',
+        'set_parameter',
+        'shovel',
+        'push-to-beehive',
+        json.dumps(shovel_config),
+    ])
+
+    shovel_config = {
+        'src-uri': 'amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer',
+        'src-queue': 'to-{}'.format(username),
+        'dest-uri': 'amqp://',
+        'dest-queue': 'messages',
+        'publish-properties': {
+            'delivery_mode': 2,
+        }
+    }
+
+    subprocess.check_output([
+        'rabbitmqctl',
+        'set_parameter',
+        'shovel',
+        'pull-from-beehive',
+        json.dumps(shovel_config),
+    ])
+
+
+if __name__ == '__main__':
+    main()
