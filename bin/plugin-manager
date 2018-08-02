@@ -2,16 +2,12 @@
 import argparse
 import json
 import os
-import random
+import ssl
 import pika
 import subprocess
 import string
 import rabbitmqctl
 
-
-SERVICE_BACKEND = os.environ.get('SERVICE_BACKEND', 'shell')
-
-RABBITMQ_URL = 'http://localhost:15672/api'
 
 SERVICE_TEMPLATE = (
     '[Unit]\n'
@@ -96,7 +92,7 @@ password_characters = string.ascii_letters + string.digits
 
 
 def generate_random_password():
-    return ''.join(random.choice(password_characters) for _ in range(32))
+    return ssl.RAND_bytes(20).hex()
 
 
 def declare_publishing_pipeline():
