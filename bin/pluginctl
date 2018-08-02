@@ -6,6 +6,8 @@ import random
 import pika
 import subprocess
 import string
+import rabbitmqctl
+
 
 SERVICE_BACKEND = os.environ.get('SERVICE_BACKEND', 'shell')
 
@@ -34,13 +36,13 @@ def read_config_file(filename):
 
 def add_user(username, password):
     try:
-        rabbitmqctl_add_user(username, password)
+        rabbitmqctl.add_user(username, password)
     except subprocess.CalledProcessError:
-        rabbitmqctl_change_password(username, password)
+        rabbitmqctl.change_password(username, password)
 
     queue = 'to-' + username
 
-    rabbitmqctl_set_permissions(
+    rabbitmqctl.set_permissions(
         username,
         configure='^{}$'.format(queue),
         write='^publish$',
@@ -48,10 +50,10 @@ def add_user(username, password):
 
 
 def remove_user(username):
-    rabbitmqctl_delete_user(username)
+    rabbitmqctl.delete_user(username)
 
 
-def rabbitmqctl_add_user(username, password):
+def rabbitmqctl.add_user(username, password):
     return subprocess.check_output([
         'rabbitmqctl',
         'add_user',
@@ -60,7 +62,7 @@ def rabbitmqctl_add_user(username, password):
     ])
 
 
-def rabbitmqctl_change_password(username, password):
+def rabbitmqctl.change_password(username, password):
     return subprocess.check_output([
         'rabbitmqctl',
         'change_password',
@@ -69,7 +71,7 @@ def rabbitmqctl_change_password(username, password):
     ])
 
 
-def rabbitmqctl_set_permissions(username, configure, read, write):
+def rabbitmqctl.set_permissions(username, configure, read, write):
     if virtual_host is None:
         return subprocess.check_output([
             'rabbitmqctl',
@@ -91,7 +93,7 @@ def rabbitmqctl_set_permissions(username, configure, read, write):
         ])
 
 
-def rabbitmqctl_delete_user(username):
+def rabbitmqctl.delete_user(username):
     return subprocess.check_output([
         'rabbitmqctl',
         'delete_user',
