@@ -17,7 +17,7 @@ def get_certfile_subject(filename):
     return dict(re.findall('/([^=]+)=([^/]+)', output.decode().strip()))
 
 
-def start_shovels():
+def get_shovel_configs():
     node_uri = 'amqp://localhost'
     beehive_uri = (
         'amqps://beehive:23181'
@@ -31,7 +31,7 @@ def start_shovels():
     subject = get_certfile_subject('/usr/lib/waggle/SSL/node/cert.pem')
     username = subject['CN']
 
-    shovels = {
+    return {
         'push-to-beehive': {
             'src-uri': node_uri,
             'src-queue': 'to-beehive',
@@ -53,7 +53,9 @@ def start_shovels():
         },
     }
 
-    for name, config in shovels.items():
+
+def start_shovels():
+    for name, config in get_shovel_configs.items():
         subprocess.check_output([
             'rabbitmqctl',
             'set_parameter',
@@ -64,7 +66,7 @@ def start_shovels():
 
 
 def stop_shovels():
-    for name in ['push-to-beehive', 'pull-from-beehive']:
+    for name in get_shovel_configs.keys():
         subprocess.check_output([
             'rabbitmqctl',
             'clear_parameter',
