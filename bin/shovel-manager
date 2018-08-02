@@ -18,13 +18,23 @@ def get_certfile_subject(filename):
 
 
 def start_shovels():
+    node_uri = 'amqp://localhost'
+    beehive_uri = (
+        'amqps://beehive:23181'
+        '?auth_mechanism=external'
+        '&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem'
+        '&certfile=/usr/lib/waggle/SSL/node/cert.pem'
+        '&keyfile=/usr/lib/waggle/SSL/node/key.pem'
+        '&verify=verify_peer'
+    )
+
     subject = get_certfile_subject('/usr/lib/waggle/SSL/node/cert.pem')
     username = subject['CN']
 
-    shovel_config = {
-        'src-uri': 'amqp://',
+    push_to_beehive_shovel_config = {
+        'src-uri': node_uri,
         'src-queue': 'to-beehive',
-        'dest-uri': 'amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer',
+        'dest-uri': beehive_uri,
         'dest-exchange': 'messages',
         'publish-properties': {
             'delivery_mode': 2,
@@ -32,18 +42,10 @@ def start_shovels():
         }
     }
 
-    subprocess.check_output([
-        'rabbitmqctl',
-        'set_parameter',
-        'shovel',
-        'push-to-beehive',
-        json.dumps(shovel_config),
-    ])
-
-    shovel_config = {
-        'src-uri': 'amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer',
+    pull_from_beehive_shovel_config = {
+        'src-uri': beehive_uri,
         'src-queue': 'to-{}'.format(username),
-        'dest-uri': 'amqp://',
+        'dest-uri': node_uri,
         'dest-queue': 'messages',
         'publish-properties': {
             'delivery_mode': 2,
@@ -54,8 +56,16 @@ def start_shovels():
         'rabbitmqctl',
         'set_parameter',
         'shovel',
+        'push-to-beehive',
+        json.dumps(push_to_beehive_shovel_config),
+    ])
+
+    subprocess.check_output([
+        'rabbitmqctl',
+        'set_parameter',
+        'shovel',
         'pull-from-beehive',
-        json.dumps(shovel_config),
+        json.dumps(pull_from_beehive_shovel_config),
     ])
 
 
