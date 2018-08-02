@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import subprocess
+
+output = subprocess.check_output([
+    'openssl',
+    'x509',
+    '-subject',
+    '-in', '/usr/lib/waggle/SSL/node/cert.pem',
+    '-noout'
+])
+
+# rabbitmqctl set_parameter shovel 'push-to-beehive' '{
+#   "src-uri": "amqp://",
+#   "src-queue": "from",
+#   "dest-uri": "amqp://localhost",
+#   "dest-queue": "to",
+#   "publish-properties": {
+#     "app_id": "testing",
+#   }
+# }'
+
+# should do this dynamically...
+
+# rabbitmqctl set_parameter shovel 'push-to-beehive' '{
+#   "src-uri": "amqp://localhost",
+#   "src-queue": "to-beehive",
+#   "dest-uri": "amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer",
+#   "dest-exchange": "messages",
+#   "publish-properties": {
+#     "delivery_mode": 2,
+#     "user_id": "node-0000001e061134fa"
+#   }
+# }'
+#
+#
+#     {push_to_beehive, [
+#       {sources, [
+#         {brokers, ["amqp://"]},
+#         {declarations, []}
+#       ]},
+#       {queue, <<"to-beehive">>},
+#       {destinations, [
+#         {broker, "amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer"},
+#         {declarations, []}
+#       ]},
+#       {publish_fields, [
+#         {exchange, <<"messages">>}
+#       ]},
+#       {publish_properties, [
+#         {delivery_mode, 2},
+#         {user_id, <<"node-0000001e061134fa">>}
+#       ]}
+#     ]},
+#     {pull_from_beehive, [
+#       {sources, [
+#         {brokers, ["amqps://beehive:23181?auth_mechanism=external&cacertfile=/usr/lib/waggle/SSL/waggleca/cacert.pem&certfile=/usr/lib/waggle/SSL/node/cert.pem&keyfile=/usr/lib/waggle/SSL/node/key.pem&verify=verify_peer"]},
+#         {declarations, []}
+#       ]},
+#       {queue, <<"to-node-0000001e061134fa">>},
+#       {destinations, [
+#         {broker, "amqp://"},
+#         {declarations, []}
+#       ]},
+#       {publish_fields, [
+#         {exchange, <<"messages">>}
+#       ]},
+#       {publish_properties, [
+#         {delivery_mode, 2}
+#       ]}
+#     ]}
+#   ]},
+#   {defaults, [
+#     {prefetch_count, 0},
+#     {ack_mode, on_confirm},
+#     {reconnect_delay, 60}
+#   ]}
