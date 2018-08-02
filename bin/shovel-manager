@@ -55,7 +55,7 @@ def get_shovel_configs():
 
 
 def start_shovels():
-    for name, config in get_shovel_configs.items():
+    for name, config in get_shovel_configs().items():
         subprocess.check_output([
             'rabbitmqctl',
             'set_parameter',
@@ -66,7 +66,7 @@ def start_shovels():
 
 
 def stop_shovels():
-    for name in get_shovel_configs.keys():
+    for name in get_shovel_configs().keys():
         subprocess.check_output([
             'rabbitmqctl',
             'clear_parameter',
