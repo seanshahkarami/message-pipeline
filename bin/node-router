@@ -22,9 +22,16 @@ def message_handler(ch, method, properties, body):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--log', default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
     parser.add_argument('queue', help='Message queue to process.')
     args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y/%m/%d %H:%M:%S %Z',
+        level=getattr(logging, args.log.upper()),
+    )
 
     parameters = pika.URLParameters(args.url)
     connection = pika.BlockingConnection(parameters)
