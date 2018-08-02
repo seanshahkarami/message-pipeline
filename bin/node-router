@@ -10,18 +10,18 @@ route_format = 'to-sub-{receiver_sub_id}'
 
 
 def message_handler(ch, method, properties, body):
-    logger.info('Got messages.')
+    logger.info('Got message data.')
 
     for message in waggle.protocol.unpack_waggle_packets(body):
         route_queue = route_format.format(**message)
         route_data = waggle.protocol.pack_waggle_packets([message])
 
-        logger.info('Route to "%s".', route_queue)
         ch.queue_declare(queue=route_queue, durable=True)
         ch.basic_publish(exchange='', routing_key=route_queue, body=route_data)
+        logger.info('Routed message to "%s".', route_queue)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
-    logger.info('Ack messages.')
+    logger.info('Ack message data.')
 
 
 def main():
