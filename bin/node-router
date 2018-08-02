@@ -4,33 +4,36 @@ import logging
 import pika
 import waggle.protocol
 
+logger = logging.getLogger('node-router')
 
 route_format = 'to-sub-{receiver_sub_id}'
 
 
 def message_handler(ch, method, properties, body):
+    logger.info('Got messages.')
+
     for message in waggle.protocol.unpack_waggle_packets(body):
         route_queue = route_format.format(**message)
         route_data = waggle.protocol.pack_waggle_packets([message])
 
-        logging.info('Routing to queue "%s".', route_queue)
+        logger.info('Route to "%s".', route_queue)
         ch.queue_declare(queue=route_queue, durable=True)
         ch.basic_publish(exchange='', routing_key=route_queue, body=route_data)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
+    logger.info('Ack messages.')
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--log', default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
     parser.add_argument('queue', help='Message queue to process.')
     args = parser.parse_args()
 
     logging.basicConfig(
+        level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y/%m/%d %H:%M:%S %Z',
-        level=getattr(logging, args.log.upper()),
     )
 
     parameters = pika.URLParameters(args.url)
