@@ -4,6 +4,7 @@ import logging
 import pika
 import waggle.protocol
 
+logger = logging.getLogger('plugin-router')
 
 route_format = 'to-plugin-{plugin_id}-{plugin_major_version}.{plugin_minor_version}-{plugin_instance}'
 
@@ -15,6 +16,8 @@ def unpack_messages_and_datagrams(body):
 
 
 def message_handler(ch, method, properties, body):
+    logger.info('Got message data.')
+
     for message, datagram in unpack_messages_and_datagrams(body):
         route_queue = route_format.format(**datagram)
 
@@ -22,11 +25,12 @@ def message_handler(ch, method, properties, body):
         plugin_message['body'] = waggle.protocol.pack_datagrams([datagram])
         route_data = waggle.protocol.pack_waggle_packets([plugin_message])
 
-        logging.info('Routing to queue "%s".', route_queue)
         ch.queue_declare(queue=route_queue, durable=True)
         ch.basic_publish(exchange='', routing_key=route_queue, body=route_data)
+        logging.info('Route to queue %s.', route_queue)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
+    logger.info('Ack message data.')
 
 
 def main():
@@ -34,6 +38,12 @@ def main():
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
     parser.add_argument('queue', help='Message queue to process.')
     args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y/%m/%d %H:%M:%S %Z',
+    )
 
     parameters = pika.URLParameters(args.url)
     connection = pika.BlockingConnection(parameters)
