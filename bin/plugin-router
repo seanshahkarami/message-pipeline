@@ -5,13 +5,22 @@ import pika
 import waggle.protocol
 
 
-route_format = 'to-sub-{receiver_sub_id}'
+route_format = 'to-plugin-{plugin_id}-{plugin_major_version}.{plugin_minor_version}-{plugin_instance}'
+
+
+def unpack_messages_and_datagrams(body):
+    for message in waggle.protocol.unpack_waggle_packets(body):
+        for datagram in waggle.protocol.unpack_datagrams(message['body']):
+            yield message, datagram
 
 
 def message_handler(ch, method, properties, body):
-    for message in waggle.protocol.unpack_waggle_packets(body):
-        route_queue = route_format.format(**message)
-        route_data = waggle.protocol.pack_waggle_packets([message])
+    for message, datagram in unpack_messages_and_datagrams(body):
+        route_queue = route_format.format(**datagram)
+
+        plugin_message = message.copy()
+        plugin_message['body'] = waggle.protocol.pack_datagrams([datagram])
+        route_data = waggle.protocol.pack_waggle_packets([plugin_message])
 
         logging.info('Routing to queue "%s".', route_queue)
         ch.queue_declare(queue=route_queue, durable=True)
