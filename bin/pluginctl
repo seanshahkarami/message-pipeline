@@ -53,54 +53,6 @@ def remove_user(username):
     rabbitmqctl.delete_user(username)
 
 
-def rabbitmqctl.add_user(username, password):
-    return subprocess.check_output([
-        'rabbitmqctl',
-        'add_user',
-        username,
-        password
-    ])
-
-
-def rabbitmqctl.change_password(username, password):
-    return subprocess.check_output([
-        'rabbitmqctl',
-        'change_password',
-        username,
-        password,
-    ])
-
-
-def rabbitmqctl.set_permissions(username, configure, read, write):
-    if virtual_host is None:
-        return subprocess.check_output([
-            'rabbitmqctl',
-            'set_permissions',
-            username,
-            configure,
-            write,
-            read,
-        ])
-    else:
-        return subprocess.check_output([
-            'rabbitmqctl',
-            'set_permissions',
-            '-p', virtual_host,
-            username,
-            configure,
-            write,
-            read,
-        ])
-
-
-def rabbitmqctl.delete_user(username):
-    return subprocess.check_output([
-        'rabbitmqctl',
-        'delete_user',
-        username,
-    ])
-
-
 def add_service(name, rabbitmq_url, executable):
     formatted = SERVICE_TEMPLATE.format(
         rabbitmq_url=rabbitmq_url,
