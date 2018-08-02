@@ -3,7 +3,7 @@ import waggle.plugin
 import time
 
 
-plugin = waggle.plugin.PrintPlugin()
+plugin = waggle.plugin.Plugin()
 
 while True:
     plugin.add_measurement({
