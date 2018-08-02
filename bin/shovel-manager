@@ -31,58 +31,46 @@ def start_shovels():
     subject = get_certfile_subject('/usr/lib/waggle/SSL/node/cert.pem')
     username = subject['CN']
 
-    push_to_beehive_shovel_config = {
-        'src-uri': node_uri,
-        'src-queue': 'to-beehive',
-        'dest-uri': beehive_uri,
-        'dest-exchange': 'messages',
-        'publish-properties': {
-            'delivery_mode': 2,
-            'user_id': username,
-        }
+    shovels = {
+        'push-to-beehive': {
+            'src-uri': node_uri,
+            'src-queue': 'to-beehive',
+            'dest-uri': beehive_uri,
+            'dest-exchange': 'messages',
+            'publish-properties': {
+                'delivery_mode': 2,
+                'user_id': username,
+            }
+        },
+        'pull-from-beehive': {
+            'src-uri': beehive_uri,
+            'src-queue': 'to-{}'.format(username),
+            'dest-uri': node_uri,
+            'dest-queue': 'messages',
+            'publish-properties': {
+                'delivery_mode': 2,
+            }
+        },
     }
 
-    pull_from_beehive_shovel_config = {
-        'src-uri': beehive_uri,
-        'src-queue': 'to-{}'.format(username),
-        'dest-uri': node_uri,
-        'dest-queue': 'messages',
-        'publish-properties': {
-            'delivery_mode': 2,
-        }
-    }
-
-    subprocess.check_output([
-        'rabbitmqctl',
-        'set_parameter',
-        'shovel',
-        'push-to-beehive',
-        json.dumps(push_to_beehive_shovel_config),
-    ])
-
-    subprocess.check_output([
-        'rabbitmqctl',
-        'set_parameter',
-        'shovel',
-        'pull-from-beehive',
-        json.dumps(pull_from_beehive_shovel_config),
-    ])
+    for name, config in shovels.items():
+        subprocess.check_output([
+            'rabbitmqctl',
+            'set_parameter',
+            'shovel',
+            name,
+            json.dumps(config),
+        ])
 
 
 def stop_shovels():
-    subprocess.check_output([
-        'rabbitmqctl',
-        'clear_parameter',
-        'shovel',
-        'push-to-beehive',
-    ])
-
-    subprocess.check_output([
-        'rabbitmqctl',
-        'clear_parameter',
-        'shovel',
-        'pull-from-beehive',
-    ])
+    for name in ['push-to-beehive', 'pull-from-beehive']:
+        subprocess.check_output([
+            'rabbitmqctl',
+            'clear_parameter',
+            'shovel',
+            name,
+        ])
 
 
 actions = {
