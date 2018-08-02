@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cp systemd/*.service /run/systemd/system/
+systemctl daemon-reload
+systemctl restart $(ls systemd)
