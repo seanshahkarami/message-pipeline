@@ -27,7 +27,7 @@ def message_handler(ch, method, properties, body):
 
         ch.queue_declare(queue=route_queue, durable=True)
         ch.basic_publish(exchange='', routing_key=route_queue, body=route_data)
-        logging.info('Route to queue %s.', route_queue)
+        logger.info('Route to queue %s.', route_queue)
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
     logger.info('Ack message data.')
