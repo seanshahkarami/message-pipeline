@@ -3,9 +3,7 @@ import argparse
 import json
 import os
 import ssl
-import pika
 import subprocess
-import string
 import rabbitmqctl
 
 
@@ -32,8 +30,10 @@ def read_config_file(filename):
 
 def add_user(username, password):
     try:
+        print('adding user', username)
         rabbitmqctl.add_user(username, password)
     except subprocess.CalledProcessError:
+        print('user already exists. renewing token.')
         rabbitmqctl.change_password(username, password)
 
     queue = 'to-' + username
@@ -88,27 +88,11 @@ def get_username_for_plugin_config(config):
         config['plugin_instance'])
 
 
-password_characters = string.ascii_letters + string.digits
-
-
 def generate_random_password():
     return ssl.RAND_bytes(20).hex()
 
 
-def declare_publishing_pipeline():
-    parameters = pika.URLParameters('amqp://localhost')
-
-    connection = pika.BlockingConnection(parameters)
-    channel = connection.channel()
-
-    channel.exchange_declare(exchange='publish', exchange_type='fanout', durable=True)
-    channel.queue_declare(queue='validate', durable=True)
-    channel.queue_bind(queue='validate', exchange='publish')
-
-
 def enable_plugin(plugin_dir):
-    declare_publishing_pipeline()
-
     config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
     username = get_username_for_plugin_config(config)
     password = generate_random_password()

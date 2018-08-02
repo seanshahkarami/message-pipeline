@@ -6,7 +6,7 @@ def add_user(username, password):
         'rabbitmqctl',
         'add_user',
         username,
-        password
+        password,
     ])
 
 
