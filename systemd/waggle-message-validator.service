@@ -1,13 +1,8 @@
 [Unit]
 Description=Validates messages going to beehive.
-After=waggle-platform.target
 
 [Service]
 EnvironmentFile=/wagglerw/waggle/env
 ExecStart=/wagglerw/message-pipeline/bin/message-validator validate to-beehive
-
 Restart=always
 RestartSec=60
-
-[Install]
-WantedBy=waggle-platform.target

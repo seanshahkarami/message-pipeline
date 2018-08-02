@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cp systemd/beehive*.service /run/systemd/system/
+systemctl daemon-reload
+systemctl restart $(ls systemd | grep beehive)

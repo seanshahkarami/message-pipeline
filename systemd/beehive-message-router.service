@@ -1,0 +1,7 @@
+[Unit]
+Description=Routes messages to nodes on beehive.
+
+[Service]
+ExecStart=/home/sean/waggle-python/bin/python /home/sean/message-pipeline/bin/beehive-message-router --url amqp://router:router@localhost messages
+Restart=always
+RestartSec=60
