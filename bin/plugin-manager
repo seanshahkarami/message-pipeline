@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import random
+import pika
+import subprocess
+import string
+
+SERVICE_BACKEND = os.environ.get('SERVICE_BACKEND', 'shell')
+
+RABBITMQ_URL = 'http://localhost:15672/api'
+
+SERVICE_TEMPLATE = (
+    '[Unit]\n'
+    'Description=Validates messages going to beehive.\n\n'
+    '[Service]\n'
+    'Environment=WAGGLE_PLUGIN_RABBITMQ_URL={rabbitmq_url}\n'
+    'ExecStart={executable}\n'
+    'Restart=always\n'
+    'RestartSec=60\n'
+)
+
+
+def read_file(filename):
+    with open(filename) as file:
+        return file.read()
+
+
+def read_config_file(filename):
+    with open(filename) as file:
+        return json.load(file)
+
+
+def add_user(username, password):
+    try:
+        rabbitmqctl_add_user(username, password)
+    except subprocess.CalledProcessError:
+        rabbitmqctl_change_password(username, password)
+
+    queue = 'to-' + username
+
+    rabbitmqctl_set_permissions(
+        username,
+        configure='^{}$'.format(queue),
+        write='^publish$',
+        read='^{}$'.format(queue))
+
+
+def remove_user(username):
+    rabbitmqctl_delete_user(username)
+
+
+def rabbitmqctl_add_user(username, password):
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'add_user',
+        username,
+        password
+    ])
+
+
+def rabbitmqctl_change_password(username, password):
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'change_password',
+        username,
+        password,
+    ])
+
+
+def rabbitmqctl_set_permissions(username, configure, read, write):
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'set_permissions',
+        username,
+        configure,
+        write,
+        read,
+    ])
+
+
+def rabbitmqctl_delete_user(username):
+    return subprocess.check_output([
+        'rabbitmqctl',
+        'delete_user',
+        username,
+    ])
+
+
+def get_service_filename_for_plugin(name):
+    return '/run/systemd/system/waggle-plugin-{}.service'.format(name)
+
+
+def add_service(name, rabbitmq_url, executable):
+    formatted = SERVICE_TEMPLATE.format(
+        rabbitmq_url=rabbitmq_url,
+        executable=executable).strip()
+
+    service_filename = get_service_filename_for_plugin(name)
+
+    with open(service_filename, 'w') as file:
+        file.writelines(formatted)
+
+    os.chmod(service_filename, 0o700)
+
+
+def remove_service(name):
+    try:
+        os.remove(get_service_filename_for_plugin(name))
+    except OSError:
+        pass
+
+
+def get_username_for_plugin_config(config):
+    ver = config['plugin_version'].split('.')
+
+    return 'plugin-{}-{}.{}-{}'.format(
+        config['plugin_id'],
+        ver[0],
+        ver[1],
+        config['plugin_instance'])
+
+
+password_characters = string.ascii_letters + string.digits
+
+
+def generate_random_password():
+    return ''.join(random.choice(password_characters) for _ in range(32))
+
+
+def declare_publishing_pipeline():
+    parameters = pika.URLParameters('amqp://localhost')
+
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
+
+    channel.exchange_declare(exchange='publish', exchange_type='fanout', durable=True)
+    channel.queue_declare(queue='validate', durable=True)
+    channel.queue_bind(queue='validate', exchange='publish')
+
+
+def enable_plugin(plugin_dir):
+    declare_publishing_pipeline()
+
+    config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
+    username = get_username_for_plugin_config(config)
+    password = generate_random_password()
+
+    rabbitmq_url = 'amqp://{}:{}@localhost'.format(username, password)
+
+    executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
+    add_user(username, password)
+    add_service(username, rabbitmq_url, executable)
+    print('enabled', username)
+
+
+def disable_plugin(plugin_dir):
+    config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
+    username = get_username_for_plugin_config(config)
+    remove_user(username)
+    remove_service(username)
+    print('disabled', username)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers(dest='subcommand')
+
+    parser_enable = subparsers.add_parser('enable')
+    parser_enable.add_argument('plugin_dirs', nargs='+')
+
+    parser_disable = subparsers.add_parser('disable')
+    parser_disable.add_argument('plugin_dirs', nargs='+')
+
+    args = parser.parse_args()
+
+    if args.subcommand == 'enable':
+        for plugin in args.plugin_dirs:
+            enable_plugin(plugin)
+    elif args.subcommand == 'disable':
+        for plugin in args.plugin_dirs:
+            disable_plugin(plugin)
+    else:
+        parser.print_help()
+
+
+if __name__ == '__main__':
+    main()
