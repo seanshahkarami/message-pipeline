@@ -40,7 +40,7 @@ def read_plugin_info(plugin_dir):
         'plugin_maj': int(section['plugin_maj']),
         'plugin_min': int(section['plugin_min']),
         'plugin_build': int(section['plugin_build']),
-        'instance': int(section['plugin_instance']),
+        'plugin_instance': int(section['plugin_instance']),
     }
 
 
