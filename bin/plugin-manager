@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-import json
+import configparser
 import os
 import ssl
 import subprocess
@@ -23,9 +23,22 @@ def read_file(filename):
         return file.read()
 
 
-def read_config_file(filename):
-    with open(filename) as file:
-        return json.load(file)
+def read_plugin_info(plugin_dir):
+    config_filename = os.path.join(plugin_dir, 'plugin.ver')
+
+    config = configparser.ConfigParser()
+    config.read(config_filename)
+    section = config['PARAMETERS']
+
+    return {
+        'plugin_id': int(section['plugin_id']),
+        'plugin_name': section['plugin_name'],
+        'description': section['description'],
+        'reference': section['reference'],
+        'plugin_maj': int(section['plugin_maj']),
+        'plugin_min': int(section['plugin_min']),
+        'plugin_build': int(section['plugin_build']),
+    }
 
 
 def add_user(username, password):
@@ -93,20 +106,20 @@ def generate_random_password():
 
 
 def enable_plugin(plugin_dir):
-    config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
+    config = read_plugin_info(plugin_dir)
     username = get_username_for_plugin_config(config)
     password = generate_random_password()
 
     rabbitmq_url = 'amqp://{}:{}@localhost'.format(username, password)
 
-    executable = os.path.abspath(os.path.join(plugin_dir, 'plugin'))
+    executable = os.path.abspath(os.path.join(plugin_dir, 'bin/plugin'))
     add_user(username, password)
     add_service(username, rabbitmq_url, executable)
     print('enabled', username)
 
 
 def disable_plugin(plugin_dir):
-    config = read_config_file(os.path.join(plugin_dir, 'plugin.json'))
+    config = read_plugin_info(plugin_dir)
     username = get_username_for_plugin_config(config)
     remove_user(username)
     remove_service(username)
