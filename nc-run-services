@@ -1,5 +1,0 @@
-#!/bin/sh
-
-cp systemd/waggle*.service /run/systemd/system/
-systemctl daemon-reload
-systemctl restart $(ls systemd | grep waggle)
