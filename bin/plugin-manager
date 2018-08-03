@@ -27,10 +27,9 @@ def read_file(filename):
 
 
 def read_plugin_info(plugin_dir):
-    config_filename = os.path.join(plugin_dir, 'plugin.ver')
-
     config = configparser.ConfigParser()
-    config.read(config_filename)
+    config.read(os.path.join(plugin_dir, 'plugin.ver'))
+    config.read(os.path.join(plugin_dir, 'plugin.instance'))
     section = config['PARAMETERS']
 
     return {
@@ -41,7 +40,7 @@ def read_plugin_info(plugin_dir):
         'plugin_maj': int(section['plugin_maj']),
         'plugin_min': int(section['plugin_min']),
         'plugin_build': int(section['plugin_build']),
-        'plugin_instance': 0,
+        'instance': int(section['plugin_instance']),
     }
 
 
