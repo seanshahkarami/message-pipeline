@@ -2,7 +2,6 @@
 import argparse
 import csv
 import datetime
-import json
 import sys
 import pika
 import waggle.protocol.v0 as protocol
@@ -33,8 +32,6 @@ def message_handler(ch, method, properties, body):
                     sensorgram['parameter_id'],
                     sensorgram['value'],
                 ])
-
-                # print(json.dumps(sensorgram, sort_keys=True))
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
