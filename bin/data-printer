@@ -27,6 +27,7 @@ def message_handler(ch, method, properties, body):
                 csvwriter.writerow([
                     timestamp.strftime('%Y/%m/%d %H:%M:%S'),
                     sensorgram['sender_id'],
+                    int(sensorgram['sender_sub_id'], 16),
                     sensorgram['sensor_id'],
                     sensorgram['sensor_instance'],
                     sensorgram['parameter_id'],
