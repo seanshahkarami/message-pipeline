@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import pika
+import waggle.protocol.v0 as protocol
+
+
+def message_handler(ch, method, properties, body):
+    for message in protocol.unpack_waggle_packets(body):
+        for datagram in protocol.unpack_datagrams(message['body']):
+            for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
+                # annotate sensorgram with message and datagram info
+                sensorgram['sender_id'] = message['sender_id']
+                sensorgram['sender_sub_id'] = message['sender_sub_id']
+                sensorgram['plugin_id'] = datagram['plugin_id']
+                sensorgram['plugin_major_version'] = datagram['plugin_major_version']
+                sensorgram['plugin_minor_version'] = datagram['plugin_minor_version']
+                sensorgram['plugin_instance'] = datagram['plugin_instance']
+                print(json.dumps(sensorgram, sort_keys=True))
+
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--url', default='amqp://localhost')
+    parser.add_argument('node_id')
+    args = parser.parse_args()
+
+    queue = 'to-node-{}'.format(args.node_id)
+
+    connection = pika.BlockingConnection(pika.URLParameters(args.url))
+    channel = connection.channel()
+
+    channel.queue_declare(queue=queue, durable=True)
+    channel.basic_consume(message_handler, queue)
+    channel.start_consuming()
+
+
+if __name__ == '__main__':
+    main()
