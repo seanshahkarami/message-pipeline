@@ -4,35 +4,32 @@ import csv
 import datetime
 import sys
 import pika
-import waggle.protocol.v0 as protocol
+import waggle.protocol
 
 
 csvwriter = csv.writer(sys.stdout)
 
 
+def unpack_messages_and_sensorgrams(body):
+    for message in waggle.protocol.unpack_waggle_packets(body):
+        for datagram in waggle.protocol.unpack_datagrams(message['body']):
+            for sensorgram in waggle.protocol.unpack_sensorgrams(datagram['body']):
+                yield message, datagram, sensorgram
+
+
 def message_handler(ch, method, properties, body):
-    for message in protocol.unpack_waggle_packets(body):
-        for datagram in protocol.unpack_datagrams(message['body']):
-            for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
-                # annotate sensorgram with message and datagram info
-                sensorgram['sender_id'] = message['sender_id']
-                sensorgram['sender_sub_id'] = message['sender_sub_id']
-                sensorgram['plugin_id'] = datagram['plugin_id']
-                sensorgram['plugin_major_version'] = datagram['plugin_major_version']
-                sensorgram['plugin_minor_version'] = datagram['plugin_minor_version']
-                sensorgram['plugin_instance'] = datagram['plugin_instance']
+    for message, datagram, sensorgram in unpack_messages_and_sensorgrams(body):
+        timestamp = datetime.datetime.fromtimestamp(sensorgram['timestamp'])
 
-                timestamp = datetime.datetime.fromtimestamp(sensorgram['timestamp'])
-
-                csvwriter.writerow([
-                    timestamp.strftime('%Y/%m/%d %H:%M:%S'),
-                    sensorgram['sender_id'],
-                    int(sensorgram['sender_sub_id'], 16),
-                    sensorgram['sensor_id'],
-                    sensorgram['sensor_instance'],
-                    sensorgram['parameter_id'],
-                    sensorgram['value'],
-                ])
+        csvwriter.writerow([
+            timestamp.strftime('%Y/%m/%d %H:%M:%S'),
+            message['sender_id'],
+            int(message['sender_sub_id'], 16),
+            sensorgram['sensor_id'],
+            sensorgram['sensor_instance'],
+            sensorgram['parameter_id'],
+            sensorgram['value'],
+        ])
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
