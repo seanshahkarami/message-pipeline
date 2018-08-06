@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import argparse
+import csv
+import datetime
 import json
+import sys
 import pika
 import waggle.protocol.v0 as protocol
+
+
+csvwriter = csv.writer(sys.stdout)
 
 
 def message_handler(ch, method, properties, body):
@@ -16,7 +22,19 @@ def message_handler(ch, method, properties, body):
                 sensorgram['plugin_major_version'] = datagram['plugin_major_version']
                 sensorgram['plugin_minor_version'] = datagram['plugin_minor_version']
                 sensorgram['plugin_instance'] = datagram['plugin_instance']
-                print(json.dumps(sensorgram, sort_keys=True))
+
+                timestamp = datetime.datetime.fromtimestamp(sensorgram['timestamp'])
+
+                csvwriter.writerow([
+                    timestamp.strftime('%Y/%m/%d %H:%M:%S'),
+                    sensorgram['sender_id'],
+                    sensorgram['sensor_id'],
+                    sensorgram['sensor_instance'],
+                    sensorgram['parameter_id'],
+                    sensorgram['value'],
+                ])
+
+                # print(json.dumps(sensorgram, sort_keys=True))
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
