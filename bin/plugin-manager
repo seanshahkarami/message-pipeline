@@ -109,7 +109,7 @@ def enable_plugin(plugin_dir):
 
     rabbitmq_url = 'amqp://{}:{}@localhost'.format(username, password)
 
-    executable = os.path.abspath(os.path.join(plugin_dir, 'bin/plugin'))
+    executable = os.path.abspath(os.path.join(plugin_dir, 'plugin_bin/plugin'))
     add_user(username, password)
     add_service(username, rabbitmq_url, executable)
     print('enabled', username)
