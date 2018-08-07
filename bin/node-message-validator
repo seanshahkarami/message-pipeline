@@ -4,7 +4,7 @@ import logging
 import os
 import pika
 import re
-import waggle.protocol.v0 as protocol
+import waggle.protocol
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -70,14 +70,14 @@ def main():
             logging.info('Dropping message with missing user ID.')
             return
 
-        packets = protocol.unpack_waggle_packets(body)
+        packets = waggle.protocol.unpack_waggle_packets(body)
 
         for packet in packets:
             # needs to reflect actual device
             packet['sender_id'] = WAGGLE_NODE_ID
             packet['sender_sub_id'] = WAGGLE_SUB_ID
 
-            datagrams = protocol.unpack_datagrams(packet['body'])
+            datagrams = waggle.protocol.unpack_datagrams(packet['body'])
 
             for datagram in datagrams:
                 datagram['plugin_id'] = plugin_info['id']
@@ -85,9 +85,9 @@ def main():
                 datagram['plugin_minor_version'] = plugin_info['version'][1]
                 datagram['plugin_instance'] = plugin_info['instance']
 
-            packet['body'] = protocol.pack_datagrams(datagrams)
+            packet['body'] = waggle.protocol.pack_datagrams(datagrams)
 
-        data = protocol.pack_waggle_packets(packets)
+        data = waggle.protocol.pack_waggle_packets(packets)
 
         ch.basic_publish(
           exchange='',
