@@ -35,15 +35,15 @@ def unpack_messages_and_sensorgrams(body):
 def message_handler(ch, method, properties, body):
     for message, datagram, sensorgram in unpack_messages_and_sensorgrams(body):
         ts = datetime.datetime.fromtimestamp(sensorgram['timestamp'])
-        node_id = message['sender_id'],
-        subsystem = int(message['sender_sub_id'], 16)
-        sensor = sensorgram['sensor_id'],
-        parameter = sensorgram['parameter_id'],
-        value = sensorgram['value']
+        node_id = message['sender_id']
+        subsystem = str(int(message['sender_sub_id'], 16))
+        sensor = str(sensorgram['sensor_id'])
+        parameter = str(sensorgram['parameter_id'])
+        value = str(sensorgram['value'])
 
-        # session.execute(
-        #     data_by_date_prepared,
-        #     (str(ts.date()), ts, node_id, subsystem, sensor, parameter, value))
+        session.execute(
+            data_by_date_prepared,
+            (ts.date(), ts, node_id, subsystem, sensor, parameter, value))
 
         session.execute(
             data_by_type_prepared,
