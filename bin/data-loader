@@ -10,15 +10,15 @@ cluster = Cluster()
 session = cluster.connect('waggle')
 
 data_by_date_query = '''
-    INSERT INTO sensor_data_by_date
-    (date, timestamp, node_id, subsystem, sensor, parameter, value)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO sensor_data_by_date
+(date, timestamp, node_id, subsystem, sensor, parameter, value)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 '''
 
 data_by_type_query = '''
-    INSERT INTO sensor_data_by_type
-    (node_id, subsystem, sensor, parameter, timestamp, value)
-    VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO sensor_data_by_type
+(node_id, subsystem, sensor, parameter, timestamp, value)
+VALUES (?, ?, ?, ?, ?, ?)
 '''
 
 data_by_date_prepared = session.prepare(data_by_date_query)
@@ -43,7 +43,7 @@ def message_handler(ch, method, properties, body):
 
         session.execute(
             data_by_date_prepared,
-            (ts, ts, node_id, subsystem, sensor, parameter, value))
+            (str(ts.date()), ts, node_id, subsystem, sensor, parameter, value))
 
         session.execute(
             data_by_type_prepared,
