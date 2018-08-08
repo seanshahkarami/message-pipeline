@@ -52,8 +52,13 @@ def main():
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
+    # change interface...don't need this anymore...
     channel.queue_declare(queue=args.inqueue, durable=True)
     channel.queue_declare(queue=args.outqueue, durable=True)
+
+    # hack. need to do this more cleanly.
+    channel.exchange_declare(exchange='publish', exchange_type='fanout', durable=True)
+    channel.queue_bind(queue=args.inqueue, exchange='publish', durable=True)
 
     def message_handler(ch, method, properties, body):
         user_id = properties.user_id
