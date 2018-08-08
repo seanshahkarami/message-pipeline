@@ -12,11 +12,11 @@ CREATE TABLE IF NOT EXISTS waggle.sensor_data_by_date (
 );
 
 CREATE TABLE IF NOT EXISTS waggle.sensor_data_by_type (
-    node_id               TEXT,
     subsystem             TEXT,
     sensor                TEXT,
     parameter             TEXT,
     timestamp             TIMESTAMP,
+    node_id               TEXT,
     value                 TEXT,
-    PRIMARY KEY  ((node_id, subsystem, sensor, parameter), timestamp)
+    PRIMARY KEY  ((subsystem, sensor, parameter), timestamp, node_id)
 );
