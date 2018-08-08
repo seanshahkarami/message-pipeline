@@ -43,7 +43,7 @@ def message_handler(ch, method, properties, body):
 
         session.execute(
             data_by_date_prepared,
-            (ts.date(), ts, node_id, subsystem, sensor, parameter, value))
+            (ts, ts, node_id, subsystem, sensor, parameter, value))
 
         session.execute(
             data_by_type_prepared,
