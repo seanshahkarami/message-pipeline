@@ -1,22 +1,53 @@
 #!/usr/bin/env python3
 import argparse
-import json
+from cassandra.cluster import Cluster
+import datetime
 import pika
-import waggle.protocol.v0 as protocol
+import waggle.protocol
+
+
+cluster = Cluster()
+session = cluster.connect('waggle')
+
+data_by_date_query = (
+    'INSERT INTO sensor_data_by_date'
+    '(date, timestamp, node_id, subsystem, sensor, parameter, value)'
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+)
+
+data_by_type_query = (
+    'INSERT INTO sensor_data_by_date'
+    '(node_id, subsystem, sensor, parameter, timestamp, value)'
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+)
+
+data_by_date_prepared = session.prepare(data_by_date_query)
+data_by_type_prepared = session.prepare(data_by_type_query)
+
+
+def unpack_messages_and_sensorgrams(body):
+    for message in waggle.protocol.unpack_waggle_packets(body):
+        for datagram in waggle.protocol.unpack_datagrams(message['body']):
+            for sensorgram in waggle.protocol.unpack_sensorgrams(datagram['body']):
+                yield message, datagram, sensorgram
 
 
 def message_handler(ch, method, properties, body):
-    for message in protocol.unpack_waggle_packets(body):
-        for datagram in protocol.unpack_datagrams(message['body']):
-            for sensorgram in protocol.unpack_sensorgrams(datagram['body']):
-                # annotate sensorgram with message and datagram info
-                sensorgram['sender_id'] = message['sender_id']
-                sensorgram['sender_sub_id'] = message['sender_sub_id']
-                sensorgram['plugin_id'] = datagram['plugin_id']
-                sensorgram['plugin_major_version'] = datagram['plugin_major_version']
-                sensorgram['plugin_minor_version'] = datagram['plugin_minor_version']
-                sensorgram['plugin_instance'] = datagram['plugin_instance']
-                print(json.dumps(sensorgram, sort_keys=True))
+    for message, datagram, sensorgram in unpack_messages_and_sensorgrams(body):
+        ts = datetime.datetime.fromtimestamp(sensorgram['timestamp'])
+        node_id = message['sender_id'],
+        subsystem = int(message['sender_sub_id'], 16)
+        sensor = sensorgram['sensor_id'],
+        parameter = sensorgram['parameter_id'],
+        value = sensorgram['value']
+
+        session.execute(
+            data_by_date_prepared,
+            (ts.date(), ts, node_id, subsystem, sensor, parameter, value))
+
+        session.execute(
+            data_by_type_prepared,
+            (node_id, subsystem, sensor, parameter, ts, value))
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -39,54 +70,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-#
-#
-#
-# from cassandra.cluster import Cluster
-# from datetime import datetime
-# import pika
-# import os
-# import binascii
-#
-#
-# cluster = Cluster(contact_points=['cassandra'])
-# session = cluster.connect('waggle')
-# query = 'INSERT INTO sensor_data_raw (node_id, date, plugin_name, plugin_version, plugin_instance, timestamp, parameter, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-# prepared = session.prepare(query)
-#
-#
-# def process_message(ch, method, properties, body):
-#     versionStrings = properties.app_id.split(':')
-#     sampleDatetime = datetime.utcfromtimestamp(float(properties.timestamp) / 1000.0)
-#     sampleDate = sampleDatetime.strftime('%Y-%m-%d')
-#     # TODO Validate / santize node_id here.
-#     node_id = properties.reply_to[-12:].lower()
-#     plugin_name = versionStrings[0]
-#     plugin_version = versionStrings[1]
-#     plugin_instance = '0' if (len(versionStrings) < 3) else versionStrings[2]
-#     timestamp = int(properties.timestamp)
-#     parameter = properties.type
-#     data = binascii.hexlify(body).decode()
-#
-#     session.execute(prepared, (node_id, sampleDate, plugin_name, plugin_version, plugin_instance, timestamp, parameter, data))
-#
-#     ch.basic_ack(delivery_tag=method.delivery_tag)
-#     print(node_id, timestamp, plugin_name, plugin_version, parameter, flush=True)
-#
-#
-# connection = pika.BlockingConnection(pika.ConnectionParameters(
-#     host=RABBITMQ_HOST,
-#     port=RABBITMQ_PORT,
-#     virtual_host=BEEHIVE_DEPLOYMENT,
-#     credentials=pika.PlainCredentials(
-#         username=RABBITMQ_USERNAME,
-#         password=RABBITMQ_PASSWORD,
-#     ),
-#     connection_attempts=10,
-#     retry_delay=3.0))
-#
-# channel = connection.channel()
-# # channel.basic_qos(prefetch_count=1)
-#
-# channel.basic_consume(process_message, queue='db-raw')
-# channel.start_consuming()
