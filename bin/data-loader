@@ -9,17 +9,17 @@ import waggle.protocol
 cluster = Cluster()
 session = cluster.connect('waggle')
 
-data_by_date_query = (
-    'INSERT INTO sensor_data_by_date'
-    '(date, timestamp, node_id, subsystem, sensor, parameter, value)'
-    'VALUES (?, ?, ?, ?, ?, ?, ?)'
-)
+data_by_date_query = '''
+    INSERT INTO sensor_data_by_date
+    (date, timestamp, node_id, subsystem, sensor, parameter, value)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+'''
 
-data_by_type_query = (
-    'INSERT INTO sensor_data_by_date'
-    '(node_id, subsystem, sensor, parameter, timestamp, value)'
-    'VALUES (?, ?, ?, ?, ?, ?)'
-)
+data_by_type_query = '''
+    INSERT INTO sensor_data_by_date
+    (node_id, subsystem, sensor, parameter, timestamp, value)
+    VALUES (?, ?, ?, ?, ?, ?)
+'''
 
 data_by_date_prepared = session.prepare(data_by_date_query)
 data_by_type_prepared = session.prepare(data_by_type_query)
