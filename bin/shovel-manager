@@ -55,7 +55,7 @@ def get_shovel_configs():
             'src-uri': 'amqp://edgeprocessor',
             'src-queue': 'to-beehive',
             'dest-uri': node_uri,
-            'dest-exchange': 'publish',
+            'dest-queue': 'to-beehive',
             'publish-properties': {
                 'delivery_mode': 2,
             }
