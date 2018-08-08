@@ -5,6 +5,7 @@ import time
 import subprocess
 import waggle.plugin
 
+
 def read_file(filename):
     with open(filename) as f:
         return f.read()
@@ -45,7 +46,7 @@ def read_network_stats():
             }
 
             plugin.add_measurement(measurement)
-            
+
             measurement = {
                 'sensor_id': sensor_id,
                 'parameter_id':2,
@@ -53,7 +54,7 @@ def read_network_stats():
             }
 
             plugin.add_measurement(measurement)
-           
+
         except (FileNotFoundError, ValueError):
             print('failed to read {}'.format(name), flush=True)
 
@@ -64,7 +65,7 @@ def read_wagman_stats():
 
     for line in output.splitlines():
         m = re.search(':cu (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)', line)
-        
+
         if m is not None:
             measurement = {'sensor_id': 0x5a,'parameter_id':1,'value':list(map(int, m.groups())),}
             plugin.add_measurement(measurement)
@@ -110,10 +111,9 @@ def read_all_stats():
     read_system_stats()
 
 
-
 plugin = waggle.plugin.Plugin()
 
 while True:
    read_all_stats()
    plugin.publish_measurements()
-   time.sleep(10)
+   time.sleep(30)

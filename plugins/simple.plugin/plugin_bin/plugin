@@ -26,4 +26,4 @@ while True:
 
     plugin.publish_measurements()
 
-    time.sleep(1)
+    time.sleep(30)
