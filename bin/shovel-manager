@@ -51,6 +51,24 @@ def get_shovel_configs():
                 'delivery_mode': 2,
             }
         },
+        'ep-to-beehive': {
+            'src-uri': 'amqp://edgeprocessor',
+            'src-queue': 'to-beehive',
+            'dest-uri': node_uri,
+            'dest-exchange': 'publish',
+            'publish-properties': {
+                'delivery_mode': 2,
+            }
+        },
+        'forward-to-ep': {
+            'src-uri': node_uri,
+            'src-queue': 'to-sub-0000000000000001',
+            'dest-uri': 'amqp://edgeprocessor',
+            'dest-queue': 'messages',
+            'publish-properties': {
+                'delivery_mode': 2,
+            }
+        },
     }
 
 
