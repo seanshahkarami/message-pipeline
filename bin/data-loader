@@ -49,6 +49,8 @@ def message_handler(ch, method, properties, body):
             data_by_type_prepared,
             (node_id, subsystem, sensor, parameter, ts, value))
 
+        print(ts, node_id, subsystem, sensor, parameter, value, flush=True)
+
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
