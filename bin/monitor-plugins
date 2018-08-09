@@ -3,11 +3,13 @@
 while true; do
   case $(systemctl get-default) in
     waggle-core.target)
-      systemctl stop $(systemctl | grep waggle-plugin-)
+      echo 'Ensuring plugins are stopped.'
+      systemctl stop 'waggle-plugin-*.service'
       ;;
     waggle-platform.target)
-      cp /wagglerw/systemd/system/waggle-plugin* /run/systemd/system
-      systemctl start $(ls /run/systemd/system | grep waggle-plugin-)
+      echo 'Ensuring plugins are started.'
+      cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
+      systemctl start 'waggle-plugin-*.service'
       ;;
   esac
 
