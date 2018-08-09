@@ -1,15 +1,19 @@
 #!/bin/sh
 
 while true; do
+  # copy plugin units to systemd runtime units
+  cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
+
+  services=$(ls /run/systemd/system | grep waggle-plugin)
+
   case $(systemctl get-default) in
     waggle-core.target)
       echo 'Ensuring plugins are stopped.'
-      systemctl stop 'waggle-plugin-*.service'
+      systemctl stop $services
       ;;
     waggle-platform.target)
       echo 'Ensuring plugins are started.'
-      cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
-      systemctl start 'waggle-plugin-*.service'
+      systemctl start $services
       ;;
   esac
 
