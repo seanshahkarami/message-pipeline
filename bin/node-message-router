@@ -6,7 +6,7 @@ import waggle.protocol
 
 logger = logging.getLogger('node-router')
 
-route_format = 'to-sub-{receiver_sub_id}'
+route_format = 'to-plugins@{receiver_sub_id}'
 
 
 def message_handler(ch, method, properties, body):
