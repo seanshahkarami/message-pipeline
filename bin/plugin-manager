@@ -66,7 +66,7 @@ def remove_user(username):
 
 
 def get_service_filename_for_plugin(name):
-    return '/run/systemd/system/waggle-{}.service'.format(name)
+    return 'waggle-{}.service'.format(name)
 
 
 # TODO Refactor to give single context object.
@@ -78,13 +78,21 @@ def add_service(name, rabbitmq_url, executable, plugin_info):
 
     service_filename = get_service_filename_for_plugin(name)
 
-    with open(service_filename, 'w') as file:
-        file.writelines(formatted)
+    targets = [
+        os.path.join('/wagglerw/systemd/system', service_filename),
+        os.path.join('/run/systemd/system', service_filename),
+    ]
 
-    os.chmod(service_filename, 0o700)
+    for target in targets:
+        os.makedirs(os.path.dirname(target), exists_ok=True)
+
+        with open(target, 'w') as file:
+            file.writelines(formatted)
+
+        os.chmod(target, 0o700)
 
     subprocess.check_output(['systemctl', 'daemon-reload'])
-    subprocess.check_output(['systemctl', 'restart', os.path.basename(service_filename)])
+    subprocess.check_output(['systemctl', 'restart', service_filename])
 
 
 def remove_service(name):
