@@ -12,9 +12,27 @@ def get_certfile_subject(filename):
         '-noout',
         '-subject',
         '-in', filename,
-    ])
+    ]).decode()
 
-    return dict(re.findall('/([^=]+)=([^/]+)', output.decode().strip()))
+    return dict(re.findall('/([^=]+)=([^/]+)', output.strip()))
+
+
+def scan_device_id(s):
+    match = re.search(r'00:1e:06:\S+', s)
+    return match.group().replace(':', '').rjust(16, '0')
+
+
+def get_ep_sub_id():
+    output = subprocess.check_output([
+        'ssh',
+        '-i', '/usr/lib/waggle/SSL/edge_processor/id_rsa_waggle_edge_processor',
+        '-o', 'BatchMode=yes',
+        '-o', 'ConnectTimeout=10',
+        'edgeprocessor',
+        'ip link'
+    ]).decode()
+
+    return scan_device_id(output)
 
 
 def get_shovel_configs():
@@ -30,6 +48,8 @@ def get_shovel_configs():
 
     subject = get_certfile_subject('/usr/lib/waggle/SSL/node/cert.pem')
     username = subject['CN']
+
+    ep_sub_id = get_ep_sub_id()
 
     return {
         'push-to-beehive': {
@@ -62,7 +82,7 @@ def get_shovel_configs():
         },
         'forward-to-ep': {
             'src-uri': node_uri,
-            'src-queue': 'to-sub-0000000000000001',
+            'src-queue': 'to-sub-{}'.format(ep_sub_id),
             'dest-uri': 'amqp://edgeprocessor',
             'dest-queue': 'messages',
             'publish-properties': {

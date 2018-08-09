@@ -69,10 +69,12 @@ def get_service_filename_for_plugin(name):
     return '/run/systemd/system/waggle-{}.service'.format(name)
 
 
-def add_service(name, rabbitmq_url, executable):
+# TODO Refactor to give single context object.
+def add_service(name, rabbitmq_url, executable, plugin_info):
     formatted = service_template.format(
         rabbitmq_url=rabbitmq_url,
-        executable=executable).strip()
+        executable=executable,
+        **plugin_info).strip()
 
     service_filename = get_service_filename_for_plugin(name)
 
@@ -111,7 +113,7 @@ def enable_plugin(plugin_dir):
 
     executable = os.path.abspath(os.path.join(plugin_dir, 'plugin_bin/plugin'))
     add_user(username, password)
-    add_service(username, rabbitmq_url, executable)
+    add_service(username, rabbitmq_url, executable, plugin_info)
     print('enabled', username)
 
 
