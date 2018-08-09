@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cp /wagglerw/systemd/system/waggle-plugin* /run/systemd/system
+systemctl start $(ls /run/systemd/system | grep waggle-plugin)
