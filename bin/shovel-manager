@@ -28,6 +28,7 @@ def get_ep_sub_id():
         '-i', '/usr/lib/waggle/SSL/edge_processor/id_rsa_waggle_edge_processor',
         '-o', 'BatchMode=yes',
         '-o', 'ConnectTimeout=10',
+        '-o', 'StrictHostKeyChecking=no',
         'edgeprocessor',
         'ip link'
     ]).decode()
