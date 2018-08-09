@@ -5,16 +5,19 @@ systemctl daemon-reload
 
 while true; do
   services=$(ls /run/systemd/system | grep waggle-plugin)
+  target=$(systemctl get-default)
 
-  case $(systemctl get-default) in
+  case $target in
     waggle-core.target)
-      echo 'Ensuring plugins are stopped.'
+      echo "Ensuring plugins are stopped."
       systemctl stop $services
       ;;
     waggle-platform.target)
-      echo 'Ensuring plugins are started.'
+      echo "Ensuring plugins are started."
       systemctl start $services
       ;;
+    *)
+      echo "Warning: Unknown target $target. Will not perform any actions."
   esac
 
   sleep 60
