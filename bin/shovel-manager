@@ -85,7 +85,7 @@ def get_shovel_configs():
             'src-uri': node_uri,
             'src-queue': 'to-sub-{}'.format(ep_sub_id),
             'dest-uri': 'amqp://edgeprocessor',
-            'dest-queue': 'messages',
+            'dest-queue': 'to-sub-{}'.format(ep_sub_id),
             'publish-properties': {
                 'delivery_mode': 2,
             }
