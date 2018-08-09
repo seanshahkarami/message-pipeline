@@ -1,9 +1,9 @@
 #!/bin/sh
 
-while true; do
-  # copy plugin units to systemd runtime units
-  cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
+cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
+systemctl daemon-reload
 
+while true; do
   services=$(ls /run/systemd/system | grep waggle-plugin)
 
   case $(systemctl get-default) in
