@@ -1,4 +1,0 @@
-#!/bin/sh
-
-systemctl stop $(ls /run/systemd/system | grep waggle-plugin)
-exit 0

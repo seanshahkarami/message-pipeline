@@ -1,9 +1,0 @@
-[Unit]
-Description=Stops enabled plugins.
-
-[Service]
-Type=oneshot
-ExecStart=/wagglerw/message-pipeline/bin/stop-plugins
-
-[Install]
-WantedBy=waggle-core.target

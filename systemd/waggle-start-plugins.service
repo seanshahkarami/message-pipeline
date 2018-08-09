@@ -1,9 +1,0 @@
-[Unit]
-Description=Starts enabled plugins.
-
-[Service]
-Type=oneshot
-ExecStart=/wagglerw/message-pipeline/bin/start-plugins
-
-[Install]
-WantedBy=waggle-platform.target
