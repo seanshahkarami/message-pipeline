@@ -1,5 +1,6 @@
 #!/bin/sh
 
+mkdir -p /wagglerw/systemd/system
 cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
 systemctl daemon-reload
 
