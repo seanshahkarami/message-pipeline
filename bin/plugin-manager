@@ -84,7 +84,7 @@ def add_service(name, rabbitmq_url, executable, plugin_info):
     ]
 
     for target in targets:
-        os.makedirs(os.path.dirname(target), exists_ok=True)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
 
         with open(target, 'w') as file:
             file.writelines(formatted)
