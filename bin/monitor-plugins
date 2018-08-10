@@ -1,10 +1,21 @@
 #!/bin/sh
 
-mkdir -p /wagglerw/systemd/system
-cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
-systemctl daemon-reload
+main() {
+  init_plugin_services
 
-while true; do
+  while true; do
+    update_plugin_services
+    sleep 60
+  done
+}
+
+init_plugin_services() {
+  mkdir -p /wagglerw/systemd/system
+  cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
+  systemctl daemon-reload
+}
+
+update_plugin_services() {
   services=$(ls /run/systemd/system | grep waggle-plugin)
   target=$(systemctl get-default)
 
@@ -20,6 +31,6 @@ while true; do
     *)
       echo "Warning: Unknown target $target. Will not perform any actions."
   esac
+}
 
-  sleep 60
-done
+# main
