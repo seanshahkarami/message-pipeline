@@ -33,4 +33,4 @@ update_plugin_services() {
   esac
 }
 
-# main
+main
