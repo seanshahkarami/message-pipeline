@@ -10,6 +10,7 @@ main() {
 }
 
 init_plugin_services() {
+  echo "Init runtime service files."
   mkdir -p /wagglerw/systemd/system
   cp /wagglerw/systemd/system/waggle-plugin-* /run/systemd/system
   systemctl daemon-reload
