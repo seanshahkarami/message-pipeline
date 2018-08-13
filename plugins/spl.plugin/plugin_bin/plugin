@@ -16,9 +16,10 @@ plugin = PrintPlugin()
 
 device = os.environ.get('WAGGLE_MICROPHONE', '/dev/waggle_microphone')
 
+
+# TODO: There should be better way to find Waggle microphone
 def get_default_configuration():
-    default_config = {
-        # TODO: There should be better way to find Waggle microphone
+    return {
         'audio_name': 'USB PnP Sound Device:',
         'audio_channels': 1,
         'audio_rate': 44100,
@@ -28,7 +29,11 @@ def get_default_configuration():
         'octave_band': 3,
         'recording': False,
     }
-    return default_config
+
+
+def read_json_file(filename):
+    with open(filename) as file:
+        return json.load(file)
 
 
 class SoundPressureLevel:
@@ -48,16 +53,10 @@ class SoundPressureLevel:
         self.recording = self.config['recording']
 
     def _get_config_table(self):
-        config_file = '/wagglerw/waggle/audio_spl.conf'
-        config_data = None
         try:
-            with open(config_file) as config:
-                config_data = json.loads(config.read())
+            return read_json_file('/wagglerw/waggle/audio_spl.conf')
         except Exception:
-            config_data = get_default_configuration()
-            with open(config_file, 'w') as config:
-                config.write(json.dumps(config_data, sort_keys=True, indent=4))
-        return config_data
+            return get_default_configuration()
 
     def _read_callback(self, in_data, frame_count, time_info, status):
         self.frames.append(np.frombuffer(in_data, dtype=np.int16))
@@ -226,7 +225,7 @@ class SoundPressureLevel:
         # if octave band > 1, so that the length of avg_db does not match with waggle protocol:
         if len(avg_db) > 10:
             avg_db = self.match_length(avg_db)
-            print(int(time.time()),avg_db)
+            print(int(time.time()), avg_db)
 
             measurement = {
                 'sensor_id': 0,
@@ -244,12 +243,4 @@ class SoundPressureLevel:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--hrf', action='store_true', help='Print in human readable form')
-    args = parser.parse_args()
-
-    if not os.path.exists(device):
-        print('No Waggle microphone detected')
-        #exit(1)
-
     SoundPressureLevel().run()
