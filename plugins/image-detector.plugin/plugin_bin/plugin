@@ -121,6 +121,7 @@ class CarPedDetector(Plugin):
 
         # Load classes
         classes = {}
+
         with open(self.config['classes'], 'r') as file:
             for line in file:
                 sp = line.strip().split(' ')
@@ -175,19 +176,11 @@ class CarPedDetector(Plugin):
                         print("Exception occurred, caught and continuing");
                         pass
 
-                    count_car = 0
-                    count_person = 0
+                    cars = detected_objects.get('car', {})
+                    people = detected_objects.get('person', {})
 
-                    if 'car' in detected_objects:
-                        count_car = len(detected_objects['car'].keys())
-                    if 'person' in detected_objects:
-                        count_person = len(detected_objects['person'].keys())
-
-                    # packet = {
-                    #     0xA1: [count_car, count_person]
-                    # }
-                    # waggle_packet = encode_frame(packet)
-                    # self.send(sensor='', data=waggle_packet)
+                    count_car = len(cars)
+                    count_person = len(people)
 
                     print('cars={} pedestrians={}'.format(count_car, count_person))
 
