@@ -446,12 +446,8 @@ def main():
 
     try:
         channel.start_consuming()
-    except (KeyboardInterrupt, Exception) as ex:
-        print(str(ex))
+    except KeyboardInterrupt:
         channel.stop_consuming()
-    finally:
-        channel.close()
-        connection.close()
 
 
 if __name__ == '__main__':
