@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import argparse
 import json
 import pika
 import time
@@ -8,6 +9,7 @@ import pickle
 import numpy as np
 import cv2
 from skimage import color
+import waggle.plugin
 
 
 null_exif = {
@@ -24,6 +26,16 @@ datetime_format = '%Y-%m-%d %H:%M:%S'
 
 EXCHANGE = 'image_pipeline'
 ROUTING_KEY_EXPORT = 'exporter'
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--print', action='store_true')
+args = parser.parse_args()
+
+if args.print:
+    plugin = waggle.plugin.PrintPlugin()
+else:
+    plugin = waggle.plugin.Plugin()
 
 
 def generate_meta_data(meta_data, results):
@@ -391,6 +403,8 @@ def cloudy_app_image(channel, method, properties, body):
         else:
             processed_data = []
 
+        print(headers, flush=True)
+
         jpeg_binary_for_cloudy_app = make_image_bytes_for_cloudy_app(headers, processed_data, body)
 
         if jpeg_binary_for_cloudy_app is not None:
@@ -402,12 +416,14 @@ def cloudy_app_image(channel, method, properties, body):
                 type='jpeg',
                 app_id='image_exporter:0:0',
             )
+
             channel.basic_publish(
                 exchange='',
                 routing_key='images',
                 body=jpeg_binary_for_cloudy_app,
                 properties=properties
             )
+
             print("pushing image to export queue...")
     else:
         print("The message does not have header to parse...")
