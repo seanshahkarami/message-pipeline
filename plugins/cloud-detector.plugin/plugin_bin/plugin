@@ -434,6 +434,8 @@ def cloudy_app_image(channel, method, properties, body):
         properties=properties,
     )
 
+    logger.info('cloud processor - published')
+
 
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
