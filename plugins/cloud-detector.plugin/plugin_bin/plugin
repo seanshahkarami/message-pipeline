@@ -13,9 +13,10 @@ import waggle.plugin
 import logging
 
 
-logger = logging.getLogger('cloud-detector')
-
 logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger('cloud-detector')
+logger.setLevel(logging.INFO)
 
 
 null_exif = {
@@ -176,7 +177,7 @@ def Generate_Features(Input_Image):
                              (One_D_Image_Blue - One_D_Image_Red) / ((One_D_Image_Blue + One_D_Image_Red) + 1), \
                              One_D_Chroma
                              ))
-    print("One D Image Stack:", One_D_Image[0, :])
+    logger.info("One D Image Stack: %s", One_D_Image[0, :])
 
     return One_D_Image, Image_Shape
 
@@ -397,41 +398,41 @@ def make_image_bytes_for_cloudy_app(meta_data, additional_info, image):
 
 
 def cloudy_app_image(channel, method, properties, body):
-    print('cloud processor', flish=True)
+    logger.info('cloud processor')
 
     if not properties.headers:
-        print("The message does not have header to parse...")
+        logger.warning("The message does not have header to parse...")
         return
 
     headers = properties.headers
 
-    if 'results' in headers:
-        processed_data = headers['results']
-    else:
-        processed_data = []
+    processed_data = headers.get('results', [])
 
-    print(headers, flush=True)
+    logger.info('cloud processor - results %s', processed_data)
 
     jpeg_binary_for_cloudy_app = make_image_bytes_for_cloudy_app(headers, processed_data, body)
 
-    if jpeg_binary_for_cloudy_app is not None:
-        properties = pika.BasicProperties(
-            headers=headers,
-            delivery_mode=2,
-            timestamp=int(time.time() * 1000),
-            content_type='b',
-            type='jpeg',
-            app_id='image_exporter:0:0',
-        )
+    if jpeg_binary_for_cloudy_app is None:
+        logger.warning('cloud processor - no image')
+        return
 
-        channel.basic_publish(
-            exchange='',
-            routing_key='images',
-            body=jpeg_binary_for_cloudy_app,
-            properties=properties
-        )
+    properties = pika.BasicProperties(
+        headers=headers,
+        delivery_mode=2,
+        timestamp=int(time.time() * 1000),
+        content_type='b',
+        type='jpeg',
+        app_id='image_exporter:0:0',
+    )
 
-        print("pushing image to export queue...")
+    channel.basic_publish(
+        exchange='',
+        routing_key='images',
+        body=jpeg_binary_for_cloudy_app,
+        properties=properties
+    )
+
+    logger.info('cloud processor - publish')
 
 
 def main():
