@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 cleanup() {
 	waggle-switch-to-operation-mode
 }
