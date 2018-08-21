@@ -416,6 +416,8 @@ def cloudy_app_image(channel, method, properties, body):
         logger.warning('cloud processor - no image')
         return
 
+    logger.info('cloud processor - publishing')
+
     properties = pika.BasicProperties(
         headers=headers,
         delivery_mode=2,
@@ -429,10 +431,8 @@ def cloudy_app_image(channel, method, properties, body):
         exchange='',
         routing_key='images',
         body=jpeg_binary_for_cloudy_app,
-        properties=properties
+        properties=properties,
     )
-
-    logger.info('cloud processor - publish')
 
 
 def main():
