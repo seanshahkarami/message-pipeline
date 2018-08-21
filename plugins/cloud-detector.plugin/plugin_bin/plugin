@@ -412,7 +412,7 @@ def cloudy_app_image(channel, method, properties, body):
 
     jpeg_binary_for_cloudy_app = make_image_bytes_for_cloudy_app(headers, processed_data, body)
 
-    if jpeg_binary_for_cloudy_app is None:
+    if not jpeg_binary_for_cloudy_app:
         logger.warning('cloud processor - no image')
         return
 
