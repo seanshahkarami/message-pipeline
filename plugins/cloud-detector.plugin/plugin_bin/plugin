@@ -221,6 +221,7 @@ def Sky_Only_Image_Writer(Original_Image_Object, Binary_Image_Object):
     # cv2.imwrite(Des_Path, Only_Sky)
     return Only_Sky
 
+
 def cloud_detection(Input_Image):
 
     Features = Generate_Features(Input_Image)[0]
@@ -316,6 +317,7 @@ def cloud_detection(Input_Image):
 
     return Binary_Image, Meta_Data
 
+
 def cloud_app_generate_meta_data(meta_data, results, cloud_app_meta_data):
     exif_dict = null_exif.copy()
     oth = exif_dict['0th']
@@ -346,6 +348,7 @@ def cloud_app_generate_meta_data(meta_data, results, cloud_app_meta_data):
     exif_dict['Cloud_App_Results'] = cloud_app_meta_data
     return exif_dict
 
+
 def convert_image_to_jpg_cloudy_app(image, pixelformat='MJPG'):
     jpeg_binary = None
     if 'MJPG' in pixelformat:
@@ -357,9 +360,6 @@ def convert_image_to_jpg_cloudy_app(image, pixelformat='MJPG'):
     else:
         raise Exception('Unsupported image format %s' % (pixelformat,))
     return cloud_app_meta_data, jpeg_binary
-
-
-
 
 
 def make_image_bytes_for_cloudy_app(meta_data, additional_info, image):
@@ -381,6 +381,7 @@ def make_image_bytes_for_cloudy_app(meta_data, additional_info, image):
         else:
             print('Could not process image: %s' % (str(ex),))
     return None
+
 
 def cloudy_app_image(channel, method, properties, body):
     if properties.headers != {}:
