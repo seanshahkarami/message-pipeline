@@ -437,16 +437,13 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     channel = connection.channel()
 
-    queue = channel.queue_declare(exclusive=True)
+    queue1 = channel.queue_declare(exclusive=True)
+    channel.queue_bind(exchange=EXCHANGE, queue=queue1.method.queue, routing_key=ROUTING_KEY_EXPORT)
+    channel.basic_consume(process_image, queue=queue1.method.queue, no_ack=True)
 
-    channel.queue_bind(
-        exchange=EXCHANGE,
-        queue=queue.method.queue,
-        routing_key=ROUTING_KEY_EXPORT)
-
-    # How does the process image function get its arguments
-    channel.basic_consume(process_image, queue=queue.method.queue, no_ack=True)
-    channel.basic_consume(cloudy_app_image, queue=queue.method.queue, no_ack=True)
+    queue2 = channel.queue_declare(exclusive=True)
+    channel.queue_bind(exchange=EXCHANGE, queue=queue2.method.queue, routing_key=ROUTING_KEY_EXPORT)
+    channel.basic_consume(cloudy_app_image, queue=queue2.method.queue, no_ack=True)
 
     try:
         channel.start_consuming()
