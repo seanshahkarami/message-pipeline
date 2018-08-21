@@ -100,6 +100,8 @@ def make_image_bytes(meta_data, additional_info, image):
 
 
 def process_image(channel, method, properties, body):
+    print('process image', flish=True)
+
     if properties.headers != {}:
         headers = properties.headers
         if 'results' in headers:
@@ -396,6 +398,8 @@ def make_image_bytes_for_cloudy_app(meta_data, additional_info, image):
 
 
 def cloudy_app_image(channel, method, properties, body):
+    print('cloud processor', flish=True)
+
     if properties.headers != {}:
         headers = properties.headers
         if 'results' in headers:
