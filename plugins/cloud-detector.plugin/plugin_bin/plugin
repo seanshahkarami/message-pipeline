@@ -10,6 +10,12 @@ import numpy as np
 import cv2
 from skimage import color
 import waggle.plugin
+import logging
+
+
+logger = logging.getLogger('cloud-detector')
+
+logging.basicConfig(level=logging.INFO)
 
 
 null_exif = {
@@ -23,10 +29,6 @@ null_exif = {
 
 copy_right = 'Waggle (http://wa8.gl) and Array of Things (https://arrayofthings.github.io). Do not use without explicit permission'
 datetime_format = '%Y-%m-%d %H:%M:%S'
-
-EXCHANGE = 'image_pipeline'
-ROUTING_KEY_EXPORT = 'exporter'
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--print', action='store_true')
@@ -82,6 +84,7 @@ def convert_image_to_jpg(image, pixelformat='MJPG'):
 
 def make_image_bytes(meta_data, additional_info, image):
     ret = io.BytesIO()
+
     try:
         exif = generate_meta_data(meta_data, additional_info)
         image_format = meta_data['image_format'].upper()
@@ -90,48 +93,45 @@ def make_image_bytes(meta_data, additional_info, image):
         exif_bytes = piexif.dump(exif)
         piexif.insert(exif_bytes, image, ret)
         return ret.read()
-    except Exception as ex:
-        if 'processing_software' in meta_data:
-            software = meta_data['processing_software']
-            print('Could not process the image from %s: %s' % (software, str(ex)))
-        else:
-            print('Could not process image: %s' % (str(ex),))
+    except Exception:
+        software = meta_data.get('processing_software')
+        logger.exception('Could not process the image from %s', software)
     return None
 
 
 def process_image(channel, method, properties, body):
-    print('process image', flish=True)
+    logger.info('process image - image received')
 
-    if properties.headers != {}:
-        headers = properties.headers
-        if 'results' in headers:
-            processed_data = headers['results']
-        else:
-            processed_data = []
+    if not properties.headers:
+        logger.warning('process image - the message does not have header to parse...')
+        return
 
-        jpeg_binary = make_image_bytes(headers, processed_data, body)
+    headers = properties.headers
+    processed_data = headers.get('results', [])
 
-        if jpeg_binary is not None:
-            properties = pika.BasicProperties(
-                headers=headers,
-                delivery_mode=2,
-                timestamp=int(time.time() * 1000),
-                content_type='b',
-                type='jpeg',
-                app_id='image_exporter:0:0',
-            )
-            channel.basic_publish(
-                exchange='',
-                routing_key='images',
-                body=jpeg_binary,
-                properties=properties
-            )
-            print("pushing image to export queue...")
-    else:
-        print("The message does not have header to parse...")
+    jpeg_binary = make_image_bytes(headers, processed_data, body)
+
+    if jpeg_binary is None:
+        logger.warning('process image - got empty image.')
+        return
+
+    logger.info('process image - publish')
+
+    channel.basic_publish(
+        exchange='image_pipeline',
+        routing_key='exporter',
+        body=jpeg_binary,
+        properties=pika.BasicProperties(
+            headers=headers,
+            delivery_mode=2,
+            timestamp=int(time.time() * 1000),
+            content_type='b',
+            type='jpeg',
+            app_id='image_exporter:0:0',
+        )
+    )
 
 # Functions for Cloudy App Image
-
 def Generate_Features(Input_Image):
     # Input_Image = cv2.imread(input_path)
     Input_Image_RGB = cv2.cvtColor(Input_Image, cv2.COLOR_BGR2RGBA)
@@ -243,13 +243,13 @@ def cloud_detection(Input_Image):
 
     # Load the model from disk
 
-    print("Loading the NB Model")
+    logger.info("Loading the NB Model")
     Model_Save_File_Name = 'Naive_Baised_Classifier_Model.sav'
     loaded_Random_Tree = pickle.load(open(Model_Save_File_Name, 'rb'))
-    print("Done Loading")
+    logger.info("Done Loading")
 
     # Gaining The Prediction
-    print("Gaining the Prediction...")
+    logger.info("Gaining the Prediction...")
     Prediction = loaded_Random_Tree.predict(Features)
     Prediction = np.transpose(np.matrix(np.array(Prediction)))
 
@@ -257,7 +257,7 @@ def cloud_detection(Input_Image):
     Prediction[Prediction >= 0.5] = 1
 
     ## Now the Focus will be to get back the Predicted Binary Image
-    print("Writing Resulting Images ...")
+    logger.info("Writing Resulting Images ...")
 
     # Des_Binary = os.path.splitext(path_src)[0]+"_Classified_Binary_Image_NB" + ".jpeg"
     Des_Binary = "Classified_Binary_Image_NB" + ".jpeg"
@@ -287,7 +287,7 @@ def cloud_detection(Input_Image):
     Cloud_Pixel_Count = np.sum(Binary_Image[:, :, 0] == 255)
     Sky_Pixel_Clount = np.sum(Binary_Image[:, :, 0] == 0)
 
-    print("Percentage of Clouds: ", Cloud_Percentage[0, 0], '%')
+    logger.info("Percentage of Clouds: %f", Cloud_Percentage[0, 0])
 
     if Cloud_Percentage != 100:
         # Gaining the Average Pixel values for each Color
@@ -301,9 +301,9 @@ def cloud_detection(Input_Image):
 
     # Printing the Average Pixel values for each Color
 
-    print('Average Pixel Value in Blue for the Sky: ', Average_Pixel_Value_Blue_Sky)
-    print('Average Pixel Value in Green for the Sky: ', Average_Pixel_Value_Green_Sky)
-    print('Average Pixel Value in Red for the Sky:', Average_Pixel_Value_Red_Sky)
+    logger.info('Average Pixel Value in Blue for the Sky: %s', Average_Pixel_Value_Blue_Sky)
+    logger.info('Average Pixel Value in Green for the Sky: %s', Average_Pixel_Value_Green_Sky)
+    logger.info('Average Pixel Value in Red for the Sky: %s', Average_Pixel_Value_Red_Sky)
 
     if Cloud_Percentage != 0:
         # Gaining the Average Pixel values for each Color
@@ -316,17 +316,16 @@ def cloud_detection(Input_Image):
         Average_Pixel_Value_Red_Cloud = -1  # Denoting 0% of Sky
 
     # Printing the Average Pixel values for each Color
-    print('Average Pixel Value in Blue for the Clouds: ', Average_Pixel_Value_Blue_Cloud)
-    print('Average Pixel Value in Green for the Clouds: ', Average_Pixel_Value_Green_Cloud)
-    print('Average Pixel Value in Red for the Clouds:', Average_Pixel_Value_Red_Cloud)
+    logger.info('Average Pixel Value in Blue for the Clouds: %s', Average_Pixel_Value_Blue_Cloud)
+    logger.info('Average Pixel Value in Green for the Clouds: %s', Average_Pixel_Value_Green_Cloud)
+    logger.info('Average Pixel Value in Red for the Clouds: %s', Average_Pixel_Value_Red_Cloud)
 
     Meta_Data = "CP:" + str(Cloud_Percentage) + \
-                "SPVB:"+ str(Average_Pixel_Value_Blue_Sky), \
-                "SPVR:" + str(Average_Pixel_Value_Blue_Sky), \
-                "SPVG:" + str(Average_Pixel_Value_Blue_Sky), \
                 "SPVB:" + str(Average_Pixel_Value_Blue_Sky), \
-                "CPVR:" + str(Average_Pixel_Value_Blue_Cloud), \
-                "CPVG:" + str(Average_Pixel_Value_Blue_Cloud), \
+                "SPVR:" + str(Average_Pixel_Value_Red_Sky), \
+                "SPVG:" + str(Average_Pixel_Value_Green_Sky), \
+                "CPVR:" + str(Average_Pixel_Value_Red_Cloud), \
+                "CPVG:" + str(Average_Pixel_Value_Green_Cloud), \
                 "CPVB:" + str(Average_Pixel_Value_Blue_Cloud)
 
     return Binary_Image, Meta_Data
@@ -400,49 +399,51 @@ def make_image_bytes_for_cloudy_app(meta_data, additional_info, image):
 def cloudy_app_image(channel, method, properties, body):
     print('cloud processor', flish=True)
 
-    if properties.headers != {}:
-        headers = properties.headers
-        if 'results' in headers:
-            processed_data = headers['results']
-        else:
-            processed_data = []
-
-        print(headers, flush=True)
-
-        jpeg_binary_for_cloudy_app = make_image_bytes_for_cloudy_app(headers, processed_data, body)
-
-        if jpeg_binary_for_cloudy_app is not None:
-            properties = pika.BasicProperties(
-                headers=headers,
-                delivery_mode=2,
-                timestamp=int(time.time() * 1000),
-                content_type='b',
-                type='jpeg',
-                app_id='image_exporter:0:0',
-            )
-
-            channel.basic_publish(
-                exchange='',
-                routing_key='images',
-                body=jpeg_binary_for_cloudy_app,
-                properties=properties
-            )
-
-            print("pushing image to export queue...")
-    else:
+    if not properties.headers:
         print("The message does not have header to parse...")
+        return
+
+    headers = properties.headers
+
+    if 'results' in headers:
+        processed_data = headers['results']
+    else:
+        processed_data = []
+
+    print(headers, flush=True)
+
+    jpeg_binary_for_cloudy_app = make_image_bytes_for_cloudy_app(headers, processed_data, body)
+
+    if jpeg_binary_for_cloudy_app is not None:
+        properties = pika.BasicProperties(
+            headers=headers,
+            delivery_mode=2,
+            timestamp=int(time.time() * 1000),
+            content_type='b',
+            type='jpeg',
+            app_id='image_exporter:0:0',
+        )
+
+        channel.basic_publish(
+            exchange='',
+            routing_key='images',
+            body=jpeg_binary_for_cloudy_app,
+            properties=properties
+        )
+
+        print("pushing image to export queue...")
 
 
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     channel = connection.channel()
 
-    queue1 = channel.queue_declare(exclusive=True)
-    channel.queue_bind(exchange=EXCHANGE, queue=queue1.method.queue, routing_key=ROUTING_KEY_EXPORT)
-    channel.basic_consume(process_image, queue=queue1.method.queue, no_ack=True)
+    queue = channel.queue_declare(exclusive=True)
+    channel.queue_bind(exchange='image_pipeline', queue=queue.method.queue, routing_key='top')
+    channel.basic_consume(process_image, queue=queue.method.queue, no_ack=True)
 
     queue2 = channel.queue_declare(exclusive=True)
-    channel.queue_bind(exchange=EXCHANGE, queue=queue2.method.queue, routing_key=ROUTING_KEY_EXPORT)
+    channel.queue_bind(exchange='image_pipeline', queue=queue2.method.queue, routing_key='top')
     channel.basic_consume(cloudy_app_image, queue=queue2.method.queue, no_ack=True)
 
     try:
