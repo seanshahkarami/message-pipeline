@@ -91,9 +91,20 @@ def read_device(file):
     time.sleep(1)
 
     header_data = file.read(header_struct.size)
-    header = header_struct.unpack(header_data)
+
+    try:
+        header = header_struct.unpack(header_data)
+    except struct.error:
+        print('invalid header', flush=True)
+        return
+
     content_data = file.read(content_struct.size)
-    content = content_struct.unpack(content_data)
+
+    try:
+        content = content_struct.unpack(content_data)
+    except struct.error:
+        print('invalid body')
+        return
 
     measurements = dict(zip(content_names, content))
 
