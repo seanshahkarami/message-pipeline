@@ -22,9 +22,9 @@ plugin = waggle.plugin.PrintPlugin()
 def get_default_configuration():
     return {
         'source': 'bottom',
-        'model': '../plugin_data/ssd_mobilenet_coco.pb',
-        'model_desc': '../plugin_data/ssd_mobilenet_coco.pbtxt',
-        'classes': '../plugin_data/ssd_mobilenet_coco.classes',
+        'model': 'models/ssd_mobilenet_coco.pb',
+        'model_desc': 'models/ssd_mobilenet_coco.pbtxt',
+        'classes': 'models/ssd_mobilenet_coco.classes',
         'input_scale': 0.00784,
         'input_size': (300, 300),
         'input_mean_subtraction': (127.5, 127.5, 127.5),
