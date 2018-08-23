@@ -77,6 +77,17 @@ content_struct = struct.Struct('<' + ''.join(type for _, type in content_fields)
 def main():
     port = os.environ.get('D3S_DEVICE', args.device)
 
+    while True:
+        try:
+            start_reading_device(port)
+        except KeyboardInterrupt:
+            break
+        except Exception as exc:
+            print('error:', exc)
+            time.sleep(5)
+
+
+def start_reading_device(port):
     with Serial(port, baudrate=9600, timeout=3) as file:
         while True:
             flush_device(file)
@@ -91,20 +102,10 @@ def read_device(file):
     time.sleep(1)
 
     header_data = file.read(header_struct.size)
-
-    try:
-        header = header_struct.unpack(header_data)
-    except struct.error:
-        print('invalid header', flush=True)
-        return
+    header = header_struct.unpack(header_data)
 
     content_data = file.read(content_struct.size)
-
-    try:
-        content = content_struct.unpack(content_data)
-    except struct.error:
-        print('invalid body')
-        return
+    content = content_struct.unpack(content_data)
 
     measurements = dict(zip(content_names, content))
 
