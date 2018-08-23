@@ -5,10 +5,12 @@ import os
 import struct
 from serial import Serial
 import waggle.plugin
+from pprint import pprint
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--print', action='store_true')
+parser.add_argument('--device', default='/dev/waggle_d3s')
 args = parser.parse_args()
 
 if args.print:
@@ -73,54 +75,133 @@ content_struct = struct.Struct('<' + ''.join(type for _, type in content_fields)
 
 
 def main():
-    port = os.environ.get('D3S_DEVICE', '/dev/ttyACM2')
+    port = os.environ.get('D3S_DEVICE', args.device)
 
     with Serial(port, baudrate=9600, timeout=3) as file:
         while True:
             flush_device(file)
             time.sleep(1)
-
             read_device(file)
             time.sleep(30)
 
 
 def read_device(file):
-    # write command
-    print('write command')
     data_out = bytes([7, 0, 0, 7, radiometrics, 0, 0])
     file.write(data_out)
     time.sleep(1)
 
     header_data = file.read(header_struct.size)
-    print('header data:', header_data)
-
-    content_data = file.read(content_struct.size)
-    print('content_data:', content_data)
-
     header = header_struct.unpack(header_data)
+    content_data = file.read(content_struct.size)
     content = content_struct.unpack(content_data)
 
-    print('header:')
-    print('length', header[0])
-    print('mode', header[1])
-    print()
+    measurements = dict(zip(content_names, content))
 
-    print('content:')
-
-    for name, value in zip(content_names, content):
-        print(name, value)
-
-    print()
-
-    print('raw:', content_data)
-    print('len:', len(content_data))
-    print()
+    pprint(measurements)
 
     plugin.add_measurement({
             'sensor_id': 300,
             'parameter_id': 0,
-            'value': content_data
+            'value': content_data,
     })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 1,
+            'value': measurements['compID'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 2,
+            'value': measurements['reportID'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 3,
+            'value': measurements['status'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 4,
+            'value': measurements['realTimeMs'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 5,
+            'value': measurements['realTimeOffsetMs'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 6,
+            'value': measurements['dose'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 7,
+            'value': measurements['doseRate'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 8,
+            'value': measurements['doseUserAccum'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 9,
+            'value': measurements['neutronLiveTime'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 10,
+            'value': measurements['neutronCount'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 11,
+            'value': measurements['neutronTemperature'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 12,
+            'value': measurements['gammaLiveTime'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 13,
+            'value': measurements['gammaCount'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 14,
+            'value': measurements['gammaTemperature'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 15,
+            'value': measurements['gammaTemperature'],
+    })
+
+    plugin.add_measurement({
+            'sensor_id': 300,
+            'parameter_id': 16,
+            'value': measurements['spectrumBitSize'],
+    })
+
+    plugin.publish_measurements()
 
 
 def flush_device(file):
