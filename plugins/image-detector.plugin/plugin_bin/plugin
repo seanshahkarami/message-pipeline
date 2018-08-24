@@ -39,13 +39,10 @@ def read_json_file(path):
 
 def read_model_file(path, desc):
     _, ext = os.path.splitext(path)
-
     if 'pb' in ext:
         return cv2.dnn.readNetFromTensorflow(path, desc)
-
     if 'caffemodel' in ext:
         return cv2.dnn.readNetFromCaffe(path, desc)
-
     raise ValueError('Model extension {} not recognized.'.format(ext))
 
 
@@ -137,10 +134,11 @@ class CarPedDetector(Plugin):
 
         while True:
             current_time = time.time()
-            #if current_time - self.config['last_updated'] > self.config['detection_interval']:
+
             if current_time - self.config['last_updated'] > 3:
                 return_code, message = self.input_handler.read()
-                print(return_code)
+                print('input handler return code', return_code)
+
                 if return_code is True:
                     print(time.asctime())
                     print('Received frame')
