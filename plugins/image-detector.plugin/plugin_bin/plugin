@@ -8,12 +8,9 @@ import numpy as np
 from waggle.pipeline import Plugin, ImagePipelineHandler
 import waggle.plugin
 
-# Configuration of the pipeline
-# name of the pipeline
-EXCHANGE = 'image_pipeline'
 
-# output direction of this processor
-ROUTING_KEY_EXPORT = 'exporter'  # flush output to Beehive
+EXCHANGE = 'image_pipeline'
+ROUTING_KEY_EXPORT = 'exporter'
 
 
 plugin = waggle.plugin.PrintPlugin()
@@ -38,6 +35,18 @@ def get_default_configuration():
 def read_json_file(path):
     with open(path) as file:
         return json.load(file)
+
+
+def read_model_file(path, desc):
+    _, ext = os.path.splitext(path)
+
+    if 'pb' in ext:
+        return cv2.dnn.readNetFromTensorflow(path, desc)
+
+    if 'caffemodel' in ext:
+        return cv2.dnn.readNetFromCaffe(path, desc)
+
+    raise ValueError('Model extension {} not recognized.'.format(ext))
 
 
 class CarPedDetector(Plugin):
@@ -96,23 +105,9 @@ class CarPedDetector(Plugin):
         # Load models
         model_path = self.config['model']
         model_desc = self.config['model_desc']
-        print ('Model loaded')
-        if not os.path.exists(model_path):
-            print('%s not exist' % (model_path,))
-            return
 
-        if not os.path.exists(model_desc):
-            print('%s not exist' % (model_desc,))
-            return
-
-        _, ext = os.path.splitext(model_path)
-        if 'pb' in ext:
-            cvNet = cv2.dnn.readNetFromTensorflow(model_path, model_desc)
-        elif 'caffemodel' in ext:
-            cvNet = cv2.dnn.readNetFromCaffe(model_path, model_desc)
-        else:
-            print('Model extension not recognized: %s' % (ext,))
-            return
+        print('Loading model {}'.format(model_path))
+        cvNet = read_model_file(model_path, model_desc)
 
         # NOTE: Did not work in Waggle 2.9.0; needs investigation
         # Use OpenCL
