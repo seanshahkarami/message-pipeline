@@ -3,6 +3,7 @@ import argparse
 import logging
 import pika
 import re
+import subprocess
 import waggle.protocol
 
 
@@ -39,7 +40,10 @@ def parse_plugin_user_id(user_id):
 
 def get_node_id():
     logging.info('Autodetecting node ID.')
-    return '0000000000000000'
+
+    output = subprocess.check_output(['ip', 'link']).decode()
+    mac = re.search(r'00:1e:\S+', output).group()
+    return mac.replace(':', '').rjust(16, '0')
 
 
 def main():
