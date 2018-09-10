@@ -72,17 +72,6 @@ def get_shovel_configs():
                 'delivery_mode': 2,
             }
         },
-        # stage data to go to beehive. this can be updated later to impose
-        # things like memory and space constraints.
-        'ep-to-beehive': {
-            'src-uri': 'amqp://edgeprocessor',
-            'src-queue': 'to-beehive',
-            'dest-uri': node_uri,
-            'dest-queue': 'to-beehive',
-            'publish-properties': {
-                'delivery_mode': 2,
-            }
-        },
         'forward-to-ep': {
             'src-uri': node_uri,
             'src-queue': 'to-plugins@{}'.format(ep_sub_id),
