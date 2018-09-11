@@ -2,11 +2,20 @@
 import argparse
 import logging
 import pika
+import re
+import subprocess
 import waggle.protocol
 
 logger = logging.getLogger('plugin-router')
 
 route_format = 'to-plugin-{plugin_id}-{plugin_major_version}.{plugin_minor_version}-{plugin_instance}'
+
+
+def get_node_id():
+    logging.info('Autodetecting node ID.')
+    output = subprocess.check_output(['ip', 'link']).decode()
+    mac = re.search(r'00:1e:\S+', output).group()
+    return mac.replace(':', '').rjust(16, '0')
 
 
 def unpack_messages_and_datagrams(body):
@@ -36,8 +45,13 @@ def message_handler(ch, method, properties, body):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', default='amqp://localhost', help='AMQP broker URL to connect to.')
-    parser.add_argument('queue', help='Message queue to process.')
+    parser.add_argument('--queue', help='Message queue to process.')
     args = parser.parse_args()
+
+    queue = args.queue
+
+    if not queue:
+        queue = 'to-plugins@{}'.format(get_node_id())
 
     logging.basicConfig(
         level=logging.INFO,
@@ -49,7 +63,7 @@ def main():
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
-    channel.queue_declare(queue=args.queue, durable=True)
+    channel.queue_declare(queue=queue, durable=True)
     channel.basic_consume(message_handler, args.queue)
     channel.start_consuming()
 
