@@ -50,29 +50,33 @@ def get_shovel_configs():
     subject = get_certfile_subject('/usr/lib/waggle/SSL/node/cert.pem')
     username = subject['CN']
 
-    ep_sub_id = get_ep_sub_id()
+    shovels = {}
 
-    return {
-        'push-to-beehive': {
-            'src-uri': node_uri,
-            'src-queue': 'to-beehive',
-            'dest-uri': beehive_uri,
-            'dest-exchange': 'messages',
-            'publish-properties': {
-                'delivery_mode': 2,
-                'user_id': username,
-            }
-        },
-        'pull-from-beehive': {
-            'src-uri': beehive_uri,
-            'src-queue': 'to-{}'.format(username),
-            'dest-uri': node_uri,
-            'dest-queue': 'messages',
-            'publish-properties': {
-                'delivery_mode': 2,
-            }
-        },
-        'forward-to-ep': {
+    shovels['push-to-beehive'] = {
+        'src-uri': node_uri,
+        'src-queue': 'to-beehive',
+        'dest-uri': beehive_uri,
+        'dest-exchange': 'messages',
+        'publish-properties': {
+            'delivery_mode': 2,
+            'user_id': username,
+        }
+    }
+
+    shovels['pull-from-beehive'] = {
+        'src-uri': beehive_uri,
+        'src-queue': 'to-{}'.format(username),
+        'dest-uri': node_uri,
+        'dest-queue': 'messages',
+        'publish-properties': {
+            'delivery_mode': 2,
+        }
+    }
+
+    try:
+        ep_sub_id = get_ep_sub_id()
+
+        shovels['forward-to-ep'] = {
             'src-uri': node_uri,
             'src-queue': 'to-plugins@{}'.format(ep_sub_id),
             'dest-uri': 'amqp://edgeprocessor',
@@ -80,8 +84,11 @@ def get_shovel_configs():
             'publish-properties': {
                 'delivery_mode': 2,
             }
-        },
-    }
+        }
+    except subprocess.CalledProcessError:
+        pass
+
+    return shovels
 
 
 def start_shovels():
