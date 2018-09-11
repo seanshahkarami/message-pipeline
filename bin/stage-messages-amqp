@@ -72,7 +72,7 @@ def main():
 
     # TODO Decide where this declare should live!
     source_channel.exchange_declare(exchange='publish', exchange_type='fanout', durable=True)
-    source_channel.bind_queue(queue=args.source_queue, exchange='publish')
+    source_channel.queue_bind(queue=args.source_queue, exchange='publish')
 
     target_parameters = pika.URLParameters(args.target_url)
     target_connection = pika.BlockingConnection(target_parameters)
