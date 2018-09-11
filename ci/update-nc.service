@@ -1,6 +1,0 @@
-[Unit]
-Description=NC CI update.
-
-[Service]
-Type=oneshot
-ExecStart=/wagglerw/message-pipeline/ci/update-nc.sh

@@ -1,9 +1,0 @@
-[Unit]
-Description=NC CI update.
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=60s
-
-[Install]
-WantedBy=timers.target
