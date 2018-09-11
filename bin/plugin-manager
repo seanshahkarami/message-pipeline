@@ -4,7 +4,6 @@ import configparser
 import os
 import ssl
 import subprocess
-import rabbitmqctl
 
 
 service_template = (
@@ -45,27 +44,6 @@ def read_plugin_info(plugin_dir):
     }
 
 
-def add_user(username, password):
-    try:
-        print('adding user', username)
-        rabbitmqctl.add_user(username, password)
-    except subprocess.CalledProcessError:
-        print('user already exists. renewing token.')
-        rabbitmqctl.change_password(username, password)
-
-    queue = 'to-' + username
-
-    rabbitmqctl.set_permissions(
-        username,
-        configure='^{}$'.format(queue),
-        write='^publish$',
-        read='^{}$'.format(queue))
-
-
-def remove_user(username):
-    rabbitmqctl.delete_user(username)
-
-
 def get_service_filename_for_plugin(name):
     return 'waggle-{}.service'.format(name)
 
@@ -93,7 +71,7 @@ def add_service(name, rabbitmq_url, executable, plugin_info):
         os.chmod(target, 0o700)
 
     subprocess.check_output(['systemctl', 'daemon-reload'])
-    subprocess.check_output(['systemctl', 'restart', service_filename])
+    # subprocess.check_output(['systemctl', 'restart', service_filename])
 
 
 def remove_service(name):
