@@ -87,7 +87,7 @@ def get_shovel_configs():
             }
         }
     except subprocess.CalledProcessError:
-        pass
+        print('could not reach ep')
 
     return shovels
 
