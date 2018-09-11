@@ -12,6 +12,7 @@ service_template = (
     'Description=Validates messages going to beehive.\n\n'
     '[Service]\n'
     'Environment=WAGGLE_PLUGIN_RABBITMQ_URL={rabbitmq_url}\n'
+    'ExecStartPre=/wagglerw/message-pipeline/bin/set-plugin-credentials\n'
     'ExecStart={executable}\n'
     'Restart=always\n'
     'RestartSec=60\n'
@@ -120,7 +121,7 @@ def enable_plugin(plugin_dir):
     rabbitmq_url = 'amqp://{}:{}@localhost'.format(username, password)
 
     executable = os.path.abspath(os.path.join(plugin_dir, 'plugin_bin/plugin'))
-    add_user(username, password)
+    # add_user(username, password)
     add_service(username, rabbitmq_url, executable, plugin_info)
     print('enabled', username)
 
@@ -128,7 +129,7 @@ def enable_plugin(plugin_dir):
 def disable_plugin(plugin_dir):
     plugin_info = read_plugin_info(plugin_dir)
     username = get_username_for_plugin_config(plugin_info)
-    remove_user(username)
+    # remove_user(username)
     remove_service(username)
     print('disabled', username)
 
