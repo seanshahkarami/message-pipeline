@@ -53,6 +53,8 @@ def main():
     if not queue:
         queue = 'to-plugins@{}'.format(get_node_id())
 
+    logger.info('Routing from {}.'.format(queue))
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
