@@ -4,6 +4,10 @@ cleanup() {
   waggle-switch-to-operation-mode
 }
 
+cd /wagglerw
+git clone https://github.com/waggle-sensor/pywaggle
+git clone https://github.com/seanshahkarami/message-pipeline
+
 waggle-switch-to-safe-mode
 trap cleanup EXIT
 
