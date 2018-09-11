@@ -86,23 +86,29 @@ def get_shovel_configs():
 
 def start_shovels():
     for name, config in get_shovel_configs().items():
-        subprocess.check_output([
-            'rabbitmqctl',
-            'set_parameter',
-            'shovel',
-            name,
-            json.dumps(config),
-        ])
+        try:
+            subprocess.check_call([
+                'rabbitmqctl',
+                'set_parameter',
+                'shovel',
+                name,
+                json.dumps(config),
+            ])
+        except subprocess.CalledProcessError:
+            print('shovel', name, 'failed to start')
 
 
 def stop_shovels():
     for name in get_shovel_configs().keys():
-        subprocess.check_output([
-            'rabbitmqctl',
-            'clear_parameter',
-            'shovel',
-            name,
-        ])
+        try:
+            subprocess.check_call([
+                'rabbitmqctl',
+                'clear_parameter',
+                'shovel',
+                name,
+            ])
+        except subprocess.CalledProcessError:
+            print('shovel', name, 'failed to stop')
 
 
 actions = {
