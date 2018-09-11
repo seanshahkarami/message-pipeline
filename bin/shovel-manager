@@ -74,6 +74,7 @@ def get_shovel_configs():
     }
 
     try:
+        # TODO eventually change to just sub_id 1
         ep_sub_id = get_ep_sub_id()
 
         shovels['forward-to-ep'] = {
